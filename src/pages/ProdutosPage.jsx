@@ -37,7 +37,7 @@ export default function ProdutosPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-xl font-bold text-text">Produtos</h2>
-        <p className="text-sm text-text-muted mt-1">Performance por produto e marca</p>
+        <p className="text-sm text-text-muted mt-1">Desempenho por produto e marca</p>
       </div>
 
       {/* Brand cards */}
@@ -52,11 +52,11 @@ export default function ProdutosPage() {
             {/* Brand summary */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               <div className="p-3 rounded-lg bg-bg-hover text-center">
-                <p className="text-[10px] text-text-dim uppercase">Opps</p>
+                <p className="text-[10px] text-text-dim uppercase">Oport.</p>
                 <p className="text-xl font-bold text-text">{formatNumber(brandTotals[bi]?.totalOpps || 0)}</p>
               </div>
               <div className="p-3 rounded-lg bg-bg-hover text-center">
-                <p className="text-[10px] text-text-dim uppercase">Won</p>
+                <p className="text-[10px] text-text-dim uppercase">Ganhas</p>
                 <p className="text-xl font-bold text-accent">{formatNumber(brandTotals[bi]?.totalWon || 0)}</p>
               </div>
               <div className="p-3 rounded-lg bg-bg-hover text-center">
@@ -76,8 +76,8 @@ export default function ProdutosPage() {
                       {product.name}
                     </p>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[10px] text-text-dim">{formatNumber(product.opps || 0)} opps</span>
-                      <span className="text-[10px] text-accent">{formatNumber(product.won || 0)} won</span>
+                      <span className="text-[10px] text-text-dim">{formatNumber(product.opps || 0)} oport.</span>
+                      <span className="text-[10px] text-accent">{formatNumber(product.won || 0)} ganhas</span>
                     </div>
                   </div>
                   <div className="text-right shrink-0">

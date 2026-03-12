@@ -274,7 +274,7 @@ export default function MarketingPage() {
         {/* Clicks + Leads over time */}
         <ChartCard
           title="Cliques e Leads"
-          subtitle="Performance diaria de aquisicao"
+          subtitle="Desempenho diario de aquisicao"
           className="animate-fade-in-delay-2"
         >
           {timeline.length > 0 ? (
@@ -444,7 +444,7 @@ function NotConnectedState() {
             { icon: Users, label: 'Leads', desc: 'CPL por campanha' },
             { icon: Target, label: 'CPM', desc: 'Custo por 1K imp.' },
             { icon: Zap, label: 'Frequencia', desc: 'Media de exibicao' },
-            { icon: TrendingUp, label: 'Timeline', desc: 'Evolucao diaria' },
+            { icon: TrendingUp, label: 'Evolucao', desc: 'Evolucao diaria' },
             { icon: Megaphone, label: 'Campanhas', desc: 'Tabela detalhada' },
           ].map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex items-center gap-2.5 p-3 rounded-lg bg-bg-hover border border-border">

@@ -41,7 +41,7 @@ export default function VendedoresPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-xl font-bold text-text">Performance da Equipe</h2>
+        <h2 className="text-xl font-bold text-text">Desempenho da Equipe</h2>
         <p className="text-sm text-text-muted mt-1">
           Visao gerencial — indicadores de vendas, velocidade e saude do pipeline
         </p>
@@ -115,9 +115,9 @@ export default function VendedoresPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <Th>#</Th><Th>Vendedor</Th><Th right>Opps</Th><Th right>Won</Th>
-                <Th right>Lost</Th><Th right>Abertas</Th><Th right>Conv.</Th>
-                <Th right>Ciclo</Th><Th right>Aging</Th><Th right>Ticket</Th>
+                <Th>#</Th><Th>Vendedor</Th><Th right>Oport.</Th><Th right>Ganhas</Th>
+                <Th right>Perdidas</Th><Th right>Abertas</Th><Th right>Conv.</Th>
+                <Th right>Ciclo</Th><Th right>Tempo</Th><Th right>Ticket</Th>
                 <Th right>Maior</Th><Th right>Receita</Th>
               </tr>
             </thead>
@@ -215,9 +215,9 @@ function SellerDetailCard({ seller: s, index }) {
 
       {/* Stats Grid — Primary */}
       <div className="grid grid-cols-4 gap-2 mb-3">
-        <MiniStat label="Opps" value={formatNumber(s.totalOpps)} />
-        <MiniStat label="Won" value={formatNumber(s.won)} color="text-accent" />
-        <MiniStat label="Lost" value={formatNumber(s.lost)} color="text-danger" />
+        <MiniStat label="Oport." value={formatNumber(s.totalOpps)} />
+        <MiniStat label="Ganhas" value={formatNumber(s.won)} color="text-accent" />
+        <MiniStat label="Perdidas" value={formatNumber(s.lost)} color="text-danger" />
         <MiniStat label="Conv." value={formatPercent(s.conversionRate)} color="text-primary-light" />
       </div>
 

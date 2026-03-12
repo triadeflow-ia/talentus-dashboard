@@ -36,7 +36,7 @@ const implantationDetails = [
   { icon: Tag, label: 'Tags', value: 38, status: 'done' },
   { icon: UserCheck, label: 'Usuarios', value: 4, status: 'done' },
   { icon: Calendar, label: 'Calendarios', value: 2, status: 'done' },
-  { icon: Shield, label: 'Verify Score', value: '99%', status: 'done' },
+  { icon: Shield, label: 'Score de Verificacao', value: '99%', status: 'done' },
 ];
 
 const checklist = [

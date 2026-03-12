@@ -57,8 +57,8 @@ export default function PodiumPage() {
 
   const radarData = [
     { metric: 'Receita', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.revenue / maxRevenue) * 100)])) },
-    { metric: 'Opps', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.totalOpps / maxOpps) * 100)])) },
-    { metric: 'Won', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.won / maxWon) * 100)])) },
+    { metric: 'Oport.', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.totalOpps / maxOpps) * 100)])) },
+    { metric: 'Ganhas', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.won / maxWon) * 100)])) },
     { metric: 'Ticket', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.avgTicket / maxTicket) * 100)])) },
     { metric: 'Conversao', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.conversionRate / maxConv) * 100)])) },
     { metric: 'Ultimos 30d', ...Object.fromEntries(top3.map((s, i) => [`v${i}`, Math.round((s.recentWon30d / maxRecent) * 100)])) },
@@ -83,7 +83,7 @@ export default function PodiumPage() {
           <span className="text-xs font-bold text-warning uppercase tracking-widest">Hall dos Campeoes</span>
         </div>
         <h2 className="text-2xl font-bold text-text">Ranking de Vendedores</h2>
-        <p className="text-sm text-text-muted mt-1">Top performers por receita gerada</p>
+        <p className="text-sm text-text-muted mt-1">Melhores vendedores por receita gerada</p>
       </div>
 
       {/* ===== PODIUM VISUAL ===== */}
@@ -117,7 +117,7 @@ export default function PodiumPage() {
         <div className="bg-bg-card rounded-xl border border-border p-6 card-scanline">
           <div className="flex items-center gap-2 mb-4">
             <Target size={16} className="text-primary-light" />
-            <h3 className="text-sm font-semibold text-text">Comparativo de Performance</h3>
+            <h3 className="text-sm font-semibold text-text">Comparativo de Desempenho</h3>
           </div>
           <div className="flex justify-center gap-4 mb-4">
             {top3.map((s, i) => (

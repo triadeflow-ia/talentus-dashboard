@@ -75,7 +75,7 @@ export default function Layout() {
               </button>
               <div>
                 <h1 className="text-sm font-semibold text-text">Talentus Digital</h1>
-                <p className="text-xs text-text-muted">RevOps Dashboard</p>
+                <p className="text-xs text-text-muted">Painel RevOps</p>
               </div>
             </div>
 

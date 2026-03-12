@@ -45,7 +45,7 @@ export default function OverviewPage() {
 
   const metrics = [
     {
-      title: 'Total Leads',
+      title: 'Total de Leads',
       value: formatNumber(data.totalLeads || 0),
       subtitle: data.totalLeads > 0 ? 'contatos no CRM' : 'Nenhum lead ainda',
       icon: Users, trend: data.totalLeads > 0 ? 'up' : 'neutral', color: 'primary',
@@ -57,7 +57,7 @@ export default function OverviewPage() {
       icon: Target, trend: 'neutral', color: 'warning',
     },
     {
-      title: 'Vendas (Won)',
+      title: 'Vendas Fechadas',
       value: formatNumber(data.wonOpps || 0),
       subtitle: data.wonOpps > 0 ? 'negociacoes ganhas' : 'Nenhuma venda',
       icon: Trophy, trend: data.wonOpps > 0 ? 'up' : 'neutral', color: 'accent',
@@ -89,7 +89,7 @@ export default function OverviewPage() {
       <div>
         <h2 className="text-xl font-bold text-text">Visao Geral</h2>
         <p className="text-sm text-text-muted mt-1">
-          Receita, vendas e performance comercial
+          Receita, vendas e desempenho comercial
           {brand !== 'all' && (
             <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/15 text-primary-light">
               {brand === 'mateus' ? 'Mateus Cortez' : 'CybNutri'}
@@ -171,7 +171,7 @@ export default function OverviewPage() {
           subtitle="Oportunidades por situacao"
           className="animate-fade-in-delay-1"
         >
-          <DonutChart data={dist.byStatus} type="status" centerLabel="Opps" />
+          <DonutChart data={dist.byStatus} type="status" centerLabel="Oport." />
         </ChartCard>
 
         {/* By Product */}
@@ -188,7 +188,7 @@ export default function OverviewPage() {
 
         {/* By Seller */}
         <ChartCard
-          title="Performance por Vendedor"
+          title="Desempenho por Vendedor"
           subtitle="Oportunidades por responsavel"
           className="animate-fade-in-delay-3"
         >

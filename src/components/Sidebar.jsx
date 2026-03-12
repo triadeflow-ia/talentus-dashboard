@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/', label: 'Painel', icon: LayoutDashboard },
   { path: '/pipelines', label: 'Pipelines', icon: GitBranch },
   { path: '/vendedores', label: 'Vendedores', icon: Users },
-  { path: '/podium', label: 'Podium', icon: Trophy },
+  { path: '/podium', label: 'Podio', icon: Trophy },
   { path: '/produtos', label: 'Produtos', icon: Package },
   { path: '/marketing', label: 'Marketing', icon: Megaphone },
 ];
@@ -87,10 +87,10 @@ export default function Sidebar({ open, onClose }) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border">
           <p className="text-xs text-text-dim">
-            RevOps Dashboard v1.0
+            Painel RevOps v1.0
           </p>
           <p className="text-xs text-text-dim mt-0.5">
-            Powered by Triadeflow
+            Desenvolvido por Triadeflow
           </p>
         </div>
       </aside>
