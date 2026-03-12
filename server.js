@@ -15,6 +15,12 @@ const GHL_TOKEN = process.env.GHL_TOKEN;
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
 const GHL_BASE_URL = 'https://services.leadconnectorhq.com';
 
+// --- Meta Ads ---
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
+const META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
+const META_API_VERSION = 'v21.0';
+const META_BASE_URL = `https://graph.facebook.com/${META_API_VERSION}`;
+
 // --- Pipeline IDs ---
 const PIPELINE_IDS = {
   comercial: 'kR7dX3quCskPn8y1hUR5',
@@ -159,6 +165,15 @@ function filterByBrand(opps, brand) {
   });
 }
 
+// --- Helper: Filter opps by seller ---
+function filterBySeller(opps, seller) {
+  if (!seller || seller === 'all') return opps;
+  return opps.filter(opp => {
+    const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || '';
+    return vendedor.toLowerCase().includes(seller.toLowerCase());
+  });
+}
+
 // --- Routes ---
 
 app.get('/api/health', (req, res) => {
@@ -174,6 +189,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/overview', async (req, res) => {
   try {
     const brand = req.query.brand;
+    const seller = req.query.seller;
 
     const [contactsData, pipelineResults] = await Promise.all([
       ghlFetch(`/contacts/?locationId=${GHL_LOCATION_ID}&limit=1`),
@@ -184,6 +200,7 @@ app.get('/api/overview', async (req, res) => {
 
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
+    allOpps = filterBySeller(allOpps, seller);
 
     const pipelineSummary = [];
     for (const { pipelineId, opportunities } of pipelineResults) {
@@ -215,7 +232,7 @@ app.get('/api/overview', async (req, res) => {
     const comercialResult = pipelineResults.find(r => r.pipelineId === PIPELINE_IDS.comercial);
     let commercialFunnel = [];
     if (comercialResult) {
-      const opps = filterByBrand(comercialResult.opportunities, brand);
+      const opps = filterBySeller(filterByBrand(comercialResult.opportunities, brand), seller);
       const pipelinesData = await ghlFetch(`/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`);
       const comercialPipeline = (pipelinesData.pipelines || []).find(p => p.id === PIPELINE_IDS.comercial);
       if (comercialPipeline) {
@@ -251,6 +268,7 @@ app.get('/api/overview', async (req, res) => {
 app.get('/api/pipelines', async (req, res) => {
   try {
     const brand = req.query.brand;
+    const seller = req.query.seller;
 
     const pipelinesData = await ghlFetch(`/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`);
     const pipelines = pipelinesData.pipelines || [];
@@ -260,7 +278,7 @@ app.get('/api/pipelines', async (req, res) => {
     for (const pipeline of pipelines) {
       if (!pipelineIds.includes(pipeline.id)) continue;
 
-      const opps = filterByBrand(await fetchAllOpportunities(pipeline.id), brand);
+      const opps = filterBySeller(filterByBrand(await fetchAllOpportunities(pipeline.id), brand), seller);
 
       const stages = (pipeline.stages || [])
         .sort((a, b) => a.position - b.position)
@@ -305,9 +323,11 @@ app.get('/api/pipelines', async (req, res) => {
 app.get('/api/sellers', async (req, res) => {
   try {
     const brand = req.query.brand;
+    const seller = req.query.seller;
     const pipelineResults = await fetchAllPipelineOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
+    allOpps = filterBySeller(allOpps, seller);
 
     const sellerMap = {};
 
@@ -383,9 +403,11 @@ app.get('/api/sellers', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const brand = req.query.brand;
+    const seller = req.query.seller;
     const pipelineResults = await fetchAllPipelineOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
+    allOpps = filterBySeller(allOpps, seller);
 
     // Build product map from opportunities
     const productData = {};
@@ -486,6 +508,383 @@ app.get('/api/crm-structure', async (req, res) => {
   } catch (error) {
     console.error('Error in /api/crm-structure:', error.message);
     res.status(500).json({ error: 'Failed to fetch CRM structure', details: error.message });
+  }
+});
+
+// Sellers list (for dropdown filter)
+app.get('/api/sellers-list', async (req, res) => {
+  try {
+    const pipelineResults = await fetchAllPipelineOpportunities();
+    const allOpps = pipelineResults.flatMap(r => r.opportunities);
+
+    const sellerNames = new Set();
+    for (const opp of allOpps) {
+      const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo;
+      if (vendedor && vendedor !== 'Nao atribuido') sellerNames.add(vendedor);
+    }
+
+    res.json({ sellers: [...sellerNames].sort() });
+  } catch (error) {
+    console.error('Error in /api/sellers-list:', error.message);
+    res.status(500).json({ error: 'Failed to fetch sellers list', details: error.message });
+  }
+});
+
+// Timeline — opportunities grouped by date (for line charts)
+app.get('/api/timeline', async (req, res) => {
+  try {
+    const brand = req.query.brand;
+    const seller = req.query.seller;
+    const days = parseInt(req.query.days) || 30;
+
+    const pipelineResults = await fetchAllPipelineOpportunities();
+    let allOpps = pipelineResults.flatMap(r => r.opportunities);
+    allOpps = filterByBrand(allOpps, brand);
+
+    // Filter by seller
+    if (seller && seller !== 'all') {
+      allOpps = allOpps.filter(opp => {
+        const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || '';
+        return vendedor.toLowerCase().includes(seller.toLowerCase());
+      });
+    }
+
+    // Build daily buckets for the last N days
+    const now = new Date();
+    const buckets = {};
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      buckets[key] = { date: key, leads: 0, won: 0, lost: 0, revenue: 0, opps: 0 };
+    }
+
+    for (const opp of allOpps) {
+      const created = opp.createdAt || opp.dateAdded;
+      if (!created) continue;
+      const dateKey = new Date(created).toISOString().split('T')[0];
+      if (buckets[dateKey]) {
+        buckets[dateKey].opps++;
+        if (opp.status === 'won') {
+          buckets[dateKey].won++;
+          buckets[dateKey].revenue += parseFloat(opp.monetaryValue) || 0;
+        } else if (opp.status === 'lost') {
+          buckets[dateKey].lost++;
+        }
+      }
+    }
+
+    // Sort chronologically
+    const timeline = Object.values(buckets).sort((a, b) => a.date.localeCompare(b.date));
+
+    // Add cumulative values
+    let cumRevenue = 0;
+    let cumWon = 0;
+    for (const day of timeline) {
+      cumRevenue += day.revenue;
+      cumWon += day.won;
+      day.cumRevenue = cumRevenue;
+      day.cumWon = cumWon;
+    }
+
+    res.json({ timeline, totalDays: days });
+  } catch (error) {
+    console.error('Error in /api/timeline:', error.message);
+    res.status(500).json({ error: 'Failed to fetch timeline', details: error.message });
+  }
+});
+
+// Distribution — data for donut/pie charts
+app.get('/api/distribution', async (req, res) => {
+  try {
+    const brand = req.query.brand;
+    const seller = req.query.seller;
+
+    const pipelineResults = await fetchAllPipelineOpportunities();
+    let allOpps = pipelineResults.flatMap(r => r.opportunities);
+    allOpps = filterByBrand(allOpps, brand);
+
+    if (seller && seller !== 'all') {
+      allOpps = allOpps.filter(opp => {
+        const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || '';
+        return vendedor.toLowerCase().includes(seller.toLowerCase());
+      });
+    }
+
+    // By status
+    const byStatus = {};
+    for (const opp of allOpps) {
+      const s = opp.status || 'open';
+      byStatus[s] = (byStatus[s] || 0) + 1;
+    }
+
+    // By product
+    const byProduct = {};
+    for (const opp of allOpps) {
+      const prod = getCustomField(opp, 'produto') || 'Nao especificado';
+      if (!byProduct[prod]) byProduct[prod] = { name: prod, count: 0, revenue: 0 };
+      byProduct[prod].count++;
+      if (opp.status === 'won') {
+        byProduct[prod].revenue += parseFloat(opp.monetaryValue) || 0;
+      }
+    }
+
+    // By brand
+    const byBrand = {};
+    for (const opp of allOpps) {
+      const marca = getCustomField(opp, 'marca') || 'Sem marca';
+      if (!byBrand[marca]) byBrand[marca] = { name: marca, count: 0, revenue: 0 };
+      byBrand[marca].count++;
+      if (opp.status === 'won') {
+        byBrand[marca].revenue += parseFloat(opp.monetaryValue) || 0;
+      }
+    }
+
+    // By seller
+    const bySeller = {};
+    for (const opp of allOpps) {
+      const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || 'Nao atribuido';
+      if (!bySeller[vendedor]) bySeller[vendedor] = { name: vendedor, count: 0, revenue: 0, won: 0 };
+      bySeller[vendedor].count++;
+      if (opp.status === 'won') {
+        bySeller[vendedor].won++;
+        bySeller[vendedor].revenue += parseFloat(opp.monetaryValue) || 0;
+      }
+    }
+
+    res.json({
+      byStatus: Object.entries(byStatus).map(([name, value]) => ({ name, value })),
+      byProduct: Object.values(byProduct).sort((a, b) => b.revenue - a.revenue),
+      byBrand: Object.values(byBrand).sort((a, b) => b.revenue - a.revenue),
+      bySeller: Object.values(bySeller).sort((a, b) => b.revenue - a.revenue),
+    });
+  } catch (error) {
+    console.error('Error in /api/distribution:', error.message);
+    res.status(500).json({ error: 'Failed to fetch distribution', details: error.message });
+  }
+});
+
+// =============================================
+// META ADS ENDPOINTS
+// =============================================
+
+// Helper: Meta API fetch
+async function metaFetch(path, params = {}) {
+  if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
+    return null; // Not configured
+  }
+  const url = new URL(`${META_BASE_URL}${path}`);
+  url.searchParams.set('access_token', META_ACCESS_TOKEN);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v) url.searchParams.set(k, v);
+  });
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Meta API error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+// Helper: get date range
+function getDateRange(days) {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - parseInt(days));
+  return {
+    since: start.toISOString().split('T')[0],
+    until: end.toISOString().split('T')[0],
+  };
+}
+
+// Meta connection status
+app.get('/api/meta/status', (req, res) => {
+  res.json({
+    connected: !!(META_ACCESS_TOKEN && META_AD_ACCOUNT_ID),
+    adAccountId: META_AD_ACCOUNT_ID ? META_AD_ACCOUNT_ID.replace(/act_/, 'act_***') : null,
+  });
+});
+
+// Meta account-level insights (KPIs)
+app.get('/api/meta/insights', async (req, res) => {
+  try {
+    if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
+      return res.json({ connected: false, data: null });
+    }
+
+    const days = req.query.days || '30';
+    const { since, until } = getDateRange(days);
+
+    const data = await metaFetch(`/${META_AD_ACCOUNT_ID}/insights`, {
+      fields: 'spend,impressions,reach,clicks,cpc,cpm,ctr,actions,cost_per_action_type,frequency,unique_clicks,cost_per_unique_click',
+      time_range: JSON.stringify({ since, until }),
+      level: 'account',
+    });
+
+    const insights = data?.data?.[0] || {};
+
+    // Extract conversions from actions
+    const actions = insights.actions || [];
+    const leads = actions.find(a => a.action_type === 'lead')?.value || 0;
+    const purchases = actions.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0;
+    const landingPageViews = actions.find(a => a.action_type === 'landing_page_view')?.value || 0;
+    const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || 0;
+
+    // Extract cost per action
+    const costPerAction = insights.cost_per_action_type || [];
+    const cpl = costPerAction.find(a => a.action_type === 'lead')?.value || 0;
+    const cpa = costPerAction.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0;
+
+    res.json({
+      connected: true,
+      data: {
+        spend: parseFloat(insights.spend || 0),
+        impressions: parseInt(insights.impressions || 0),
+        reach: parseInt(insights.reach || 0),
+        clicks: parseInt(insights.clicks || 0),
+        uniqueClicks: parseInt(insights.unique_clicks || 0),
+        cpc: parseFloat(insights.cpc || 0),
+        cpm: parseFloat(insights.cpm || 0),
+        ctr: parseFloat(insights.ctr || 0),
+        frequency: parseFloat(insights.frequency || 0),
+        costPerUniqueClick: parseFloat(insights.cost_per_unique_click || 0),
+        leads: parseInt(leads),
+        purchases: parseInt(purchases),
+        landingPageViews: parseInt(landingPageViews),
+        linkClicks: parseInt(linkClicks),
+        cpl: parseFloat(cpl),
+        cpa: parseFloat(cpa),
+        period: { since, until, days: parseInt(days) },
+      },
+    });
+  } catch (error) {
+    console.error('Error in /api/meta/insights:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Meta insights', details: error.message });
+  }
+});
+
+// Meta campaigns list with insights
+app.get('/api/meta/campaigns', async (req, res) => {
+  try {
+    if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
+      return res.json({ connected: false, campaigns: [] });
+    }
+
+    const days = req.query.days || '30';
+    const { since, until } = getDateRange(days);
+
+    // Fetch campaigns
+    const campaignsData = await metaFetch(`/${META_AD_ACCOUNT_ID}/campaigns`, {
+      fields: 'name,status,objective,daily_budget,lifetime_budget,start_time,stop_time,created_time',
+      limit: '100',
+      filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }]),
+    });
+
+    const campaigns = campaignsData?.data || [];
+
+    // Fetch insights for each campaign
+    const campaignIds = campaigns.map(c => c.id);
+    let campaignInsights = {};
+
+    if (campaignIds.length > 0) {
+      const insightsData = await metaFetch(`/${META_AD_ACCOUNT_ID}/insights`, {
+        fields: 'campaign_id,campaign_name,spend,impressions,reach,clicks,cpc,cpm,ctr,actions,cost_per_action_type,unique_clicks',
+        time_range: JSON.stringify({ since, until }),
+        level: 'campaign',
+        limit: '500',
+      });
+
+      for (const row of (insightsData?.data || [])) {
+        const actions = row.actions || [];
+        const costPerAction = row.cost_per_action_type || [];
+        const leads = actions.find(a => a.action_type === 'lead')?.value || 0;
+        const purchases = actions.find(a => a.action_type === 'purchase')?.value || 0;
+        const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || 0;
+        const cpl = costPerAction.find(a => a.action_type === 'lead')?.value || 0;
+
+        campaignInsights[row.campaign_id] = {
+          spend: parseFloat(row.spend || 0),
+          impressions: parseInt(row.impressions || 0),
+          reach: parseInt(row.reach || 0),
+          clicks: parseInt(row.clicks || 0),
+          uniqueClicks: parseInt(row.unique_clicks || 0),
+          cpc: parseFloat(row.cpc || 0),
+          cpm: parseFloat(row.cpm || 0),
+          ctr: parseFloat(row.ctr || 0),
+          leads: parseInt(leads),
+          purchases: parseInt(purchases),
+          linkClicks: parseInt(linkClicks),
+          cpl: parseFloat(cpl),
+        };
+      }
+    }
+
+    // Merge campaigns with insights
+    const result = campaigns.map(c => ({
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      objective: c.objective,
+      dailyBudget: c.daily_budget ? parseFloat(c.daily_budget) / 100 : null,
+      lifetimeBudget: c.lifetime_budget ? parseFloat(c.lifetime_budget) / 100 : null,
+      startTime: c.start_time,
+      stopTime: c.stop_time,
+      createdTime: c.created_time,
+      insights: campaignInsights[c.id] || null,
+    }));
+
+    // Sort by spend descending
+    result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
+
+    res.json({
+      connected: true,
+      campaigns: result,
+      total: result.length,
+      period: { since, until, days: parseInt(days) },
+    });
+  } catch (error) {
+    console.error('Error in /api/meta/campaigns:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Meta campaigns', details: error.message });
+  }
+});
+
+// Meta daily timeline (spend + results over time)
+app.get('/api/meta/timeline', async (req, res) => {
+  try {
+    if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
+      return res.json({ connected: false, timeline: [] });
+    }
+
+    const days = req.query.days || '30';
+    const { since, until } = getDateRange(days);
+
+    const data = await metaFetch(`/${META_AD_ACCOUNT_ID}/insights`, {
+      fields: 'spend,impressions,clicks,actions,reach',
+      time_range: JSON.stringify({ since, until }),
+      time_increment: '1',
+      level: 'account',
+      limit: '500',
+    });
+
+    const timeline = (data?.data || []).map(row => {
+      const actions = row.actions || [];
+      const leads = actions.find(a => a.action_type === 'lead')?.value || 0;
+      const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || 0;
+      return {
+        date: row.date_start,
+        spend: parseFloat(row.spend || 0),
+        impressions: parseInt(row.impressions || 0),
+        clicks: parseInt(row.clicks || 0),
+        reach: parseInt(row.reach || 0),
+        leads: parseInt(leads),
+        linkClicks: parseInt(linkClicks),
+      };
+    });
+
+    res.json({ connected: true, timeline, period: { since, until, days: parseInt(days) } });
+  } catch (error) {
+    console.error('Error in /api/meta/timeline:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Meta timeline', details: error.message });
   }
 });
 

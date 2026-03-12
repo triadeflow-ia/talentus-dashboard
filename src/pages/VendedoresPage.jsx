@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DollarSign, Trophy, Medal, Crown, Award } from 'lucide-react';
 import { api } from '../lib/api';
 import { useBrand } from '../lib/BrandContext';
+import { useFilter } from '../lib/FilterContext';
 import { formatBRL, formatNumber, formatPercent } from '../lib/utils';
 import ChartCard from '../components/ChartCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
@@ -16,10 +17,11 @@ const badgeConfig = {
 
 export default function VendedoresPage() {
   const { brand } = useBrand();
+  const { seller } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sellers', brand],
-    queryFn: () => api.sellers(brand),
+    queryKey: ['sellers', brand, seller],
+    queryFn: () => api.sellers(brand, seller),
   });
 
   if (isLoading) {

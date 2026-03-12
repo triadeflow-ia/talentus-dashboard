@@ -2,16 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { BarChart3 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useBrand } from '../lib/BrandContext';
+import { useFilter } from '../lib/FilterContext';
 import { formatBRL, formatNumber } from '../lib/utils';
 import ChartCard from '../components/ChartCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
 
 export default function ProdutosPage() {
   const { brand } = useBrand();
+  const { seller } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', brand],
-    queryFn: () => api.products(brand),
+    queryKey: ['products', brand, seller],
+    queryFn: () => api.products(brand, seller),
   });
 
   if (isLoading) {

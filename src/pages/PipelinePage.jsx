@@ -2,15 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { GitBranch } from 'lucide-react';
 import { api } from '../lib/api';
 import { useBrand } from '../lib/BrandContext';
+import { useFilter } from '../lib/FilterContext';
 import PipelineCard from '../components/PipelineCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
 
 export default function PipelinePage() {
   const { brand } = useBrand();
+  const { seller } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['pipelines', brand],
-    queryFn: () => api.pipelines(brand),
+    queryKey: ['pipelines', brand, seller],
+    queryFn: () => api.pipelines(brand, seller),
   });
 
   if (isLoading) {

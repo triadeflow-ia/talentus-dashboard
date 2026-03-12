@@ -4,7 +4,6 @@ import OverviewPage from './pages/OverviewPage';
 import PipelinePage from './pages/PipelinePage';
 import VendedoresPage from './pages/VendedoresPage';
 import ProdutosPage from './pages/ProdutosPage';
-import ProjetoPage from './pages/ProjetoPage';
 import MarketingPage from './pages/MarketingPage';
 
 export default function App() {
@@ -16,7 +15,6 @@ export default function App() {
           <Route path="/pipelines" element={<PipelinePage />} />
           <Route path="/vendedores" element={<VendedoresPage />} />
           <Route path="/produtos" element={<ProdutosPage />} />
-          <Route path="/projeto" element={<ProjetoPage />} />
           <Route path="/marketing" element={<MarketingPage />} />
         </Route>
       </Routes>

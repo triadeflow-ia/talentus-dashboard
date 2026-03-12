@@ -1,38 +1,38 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, Target, Trophy, TrendingUp, DollarSign, Ticket,
-  FileText, GitBranch, Tag, UserCheck, Calendar,
+  BarChart3, LineChart as LineChartIcon,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useBrand } from '../lib/BrandContext';
+import { useFilter } from '../lib/FilterContext';
 import { formatBRL, formatNumber, formatPercent } from '../lib/utils';
 import MetricCard from '../components/MetricCard';
 import ChartCard from '../components/ChartCard';
 import FunnelChart from '../components/FunnelChart';
-import ProgressTracker from '../components/ProgressTracker';
+import TimelineChart from '../components/TimelineChart';
+import DonutChart from '../components/DonutChart';
 import { SkeletonPage } from '../components/LoadingSkeleton';
-
-const tdiPhases = [
-  { name: 'Diagnostico', status: 'done' },
-  { name: 'Blueprint', status: 'done' },
-  { name: 'Implantacao', status: 'done' },
-  { name: 'Automacao', status: 'in-progress' },
-  { name: 'Treinamento', status: 'in-progress' },
-  { name: 'Auditoria', status: 'pending' },
-  { name: 'Escala', status: 'pending' },
-];
 
 export default function OverviewPage() {
   const { brand } = useBrand();
+  const { seller, period } = useFilter();
+  const [timelineMode, setTimelineMode] = useState('daily');
 
   const { data: overview, isLoading: loadingOverview } = useQuery({
-    queryKey: ['overview', brand],
-    queryFn: () => api.overview(brand),
+    queryKey: ['overview', brand, seller],
+    queryFn: () => api.overview(brand, seller),
   });
 
-  const { data: crmData } = useQuery({
-    queryKey: ['crm-structure'],
-    queryFn: api.crmStructure,
+  const { data: timelineData } = useQuery({
+    queryKey: ['timeline', brand, seller, period],
+    queryFn: () => api.timeline(brand, seller, period),
+  });
+
+  const { data: distData } = useQuery({
+    queryKey: ['distribution', brand, seller],
+    queryFn: () => api.distribution(brand, seller),
   });
 
   if (loadingOverview) {
@@ -40,7 +40,8 @@ export default function OverviewPage() {
   }
 
   const data = overview || {};
-  const crm = crmData || { fields: 22, pipelines: 6, tags: 38, users: 4, calendars: 2 };
+  const timeline = timelineData?.timeline || [];
+  const dist = distData || { byStatus: [], byProduct: [], byBrand: [], bySeller: [] };
 
   const metrics = [
     {
@@ -83,23 +84,20 @@ export default function OverviewPage() {
 
   const commercialStages = data.commercialFunnel || [];
 
-  const crmItems = [
-    { icon: FileText, label: 'Campos', value: crm.fields || 22 },
-    { icon: GitBranch, label: 'Pipelines', value: crm.pipelines || 6 },
-    { icon: Tag, label: 'Tags', value: crm.tags || 38 },
-    { icon: UserCheck, label: 'Usuarios', value: crm.users || 4 },
-    { icon: Calendar, label: 'Calendarios', value: crm.calendars || 2 },
-  ];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-xl font-bold text-text">Visao Geral</h2>
         <p className="text-sm text-text-muted mt-1">
-          KPIs executivos e resumo do CRM
+          Receita, vendas e performance comercial
           {brand !== 'all' && (
             <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/15 text-primary-light">
               {brand === 'mateus' ? 'Mateus Cortez' : 'CybNutri'}
+            </span>
+          )}
+          {seller !== 'all' && (
+            <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent/15 text-accent">
+              {seller}
             </span>
           )}
         </p>
@@ -114,62 +112,202 @@ export default function OverviewPage() {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Timeline + Funnel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Line Chart — 2 cols */}
+        <ChartCard
+          title="Evolucao no Tempo"
+          subtitle={`Ultimos ${period} dias — oportunidades e vendas`}
+          className="lg:col-span-2 animate-fade-in-delay-1"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => setTimelineMode('daily')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium transition-all
+                ${timelineMode === 'daily'
+                  ? 'bg-primary/15 text-primary-light border border-primary/30'
+                  : 'text-text-muted hover:text-text bg-bg-hover border border-border'
+                }`}
+            >
+              <BarChart3 size={12} />
+              Diario
+            </button>
+            <button
+              onClick={() => setTimelineMode('cumulative')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium transition-all
+                ${timelineMode === 'cumulative'
+                  ? 'bg-primary/15 text-primary-light border border-primary/30'
+                  : 'text-text-muted hover:text-text bg-bg-hover border border-border'
+                }`}
+            >
+              <LineChartIcon size={12} />
+              Acumulado
+            </button>
+          </div>
+          <TimelineChart data={timeline} mode={timelineMode} />
+        </ChartCard>
+
+        {/* Funnel — 1 col */}
         <ChartCard
           title="Funil Comercial"
           subtitle="Pipeline comercial por etapa"
-          className="animate-fade-in-delay-1"
+          className="animate-fade-in-delay-2"
         >
           {commercialStages.length > 0 ? (
-            <FunnelChart stages={commercialStages} />
+            <FunnelChart stages={commercialStages} variant="pyramid" />
           ) : (
             <div className="text-center py-8 text-text-dim text-sm">
               Dados do funil serao exibidos com oportunidades registradas.
             </div>
           )}
         </ChartCard>
+      </div>
 
+      {/* Donuts Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* By Status */}
         <ChartCard
-          title="Projeto TDI"
-          subtitle="Progresso da implantacao — 7 fases"
+          title="Distribuicao por Status"
+          subtitle="Oportunidades por situacao"
+          className="animate-fade-in-delay-1"
+        >
+          <DonutChart data={dist.byStatus} type="status" centerLabel="Opps" />
+        </ChartCard>
+
+        {/* By Product */}
+        <ChartCard
+          title="Receita por Produto"
+          subtitle="Top produtos por faturamento"
           className="animate-fade-in-delay-2"
         >
-          <ProgressTracker phases={tdiPhases} />
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-text-muted">Progresso geral</span>
-              <span className="text-xs font-semibold text-primary-light">
-                {Math.round((tdiPhases.filter(p => p.status === 'done').length / tdiPhases.length) * 100)}%
-              </span>
-            </div>
-            <div className="h-2 bg-bg-hover rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700"
-                style={{
-                  width: `${(tdiPhases.filter(p => p.status === 'done').length / tdiPhases.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
+          <DonutChart
+            data={dist.byProduct.slice(0, 6).map(p => ({ name: p.name, value: p.count, revenue: p.revenue }))}
+            centerLabel="Produtos"
+          />
+        </ChartCard>
+
+        {/* By Seller */}
+        <ChartCard
+          title="Performance por Vendedor"
+          subtitle="Oportunidades por responsavel"
+          className="animate-fade-in-delay-3"
+        >
+          <DonutChart
+            data={dist.bySeller.map(s => ({ name: s.name, value: s.count, revenue: s.revenue }))}
+            centerLabel="Vendedores"
+          />
         </ChartCard>
       </div>
 
-      {/* CRM Structure */}
-      <ChartCard title="Estrutura CRM" subtitle="Resumo da implantacao GoHighLevel" className="animate-fade-in-delay-3">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {crmItems.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-3 p-3 rounded-lg bg-bg-hover border border-border">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary-light">
-                <Icon size={16} />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-text">{value}</p>
-                <p className="text-[11px] text-text-muted">{label}</p>
-              </div>
+      {/* Taxa de Conversao por Etapa do Funil */}
+      {commercialStages.length > 1 && (
+        <ChartCard
+          title="Taxa de Conversao por Etapa"
+          subtitle="Funil comercial — conversao entre etapas"
+          className="animate-fade-in-delay-2"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Etapa</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Quantidade</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Conversao</th>
+                  <th className="text-left py-3 px-3 text-xs text-text-dim font-medium uppercase tracking-wider w-1/3">Progresso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {commercialStages.map((stage, i) => {
+                  const prevCount = i > 0 ? commercialStages[i - 1].count : stage.count;
+                  const conversion = prevCount > 0 ? ((stage.count || 0) / prevCount) * 100 : 100;
+                  const totalConversion = commercialStages[0].count > 0
+                    ? ((stage.count || 0) / commercialStages[0].count) * 100
+                    : 0;
+                  const barColor = conversion >= 70 ? '#10b981' : conversion >= 40 ? '#f59e0b' : '#ef4444';
+
+                  return (
+                    <tr key={stage.name} className="border-b border-border/50 hover:bg-bg-hover transition-colors">
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold bg-bg-hover text-text-dim">
+                            {i + 1}
+                          </span>
+                          <span className="font-medium text-text">{stage.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-right font-semibold text-text">{formatNumber(stage.count || 0)}</td>
+                      <td className="py-3 px-2 text-right">
+                        <span className="font-bold" style={{ color: barColor }}>
+                          {i === 0 ? '—' : formatPercent(conversion)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="h-2 w-full bg-bg-hover rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${totalConversion}%`, backgroundColor: barColor }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {commercialStages.length > 0 && commercialStages[0].count > 0 && (
+            <div className="mt-3 flex items-center justify-between px-2 py-2 rounded-lg bg-bg-hover">
+              <span className="text-xs text-text-muted">Conversao total (topo → fim)</span>
+              <span className="text-sm font-bold text-primary-light">
+                {formatPercent(
+                  commercialStages[0].count > 0
+                    ? ((commercialStages[commercialStages.length - 1].count || 0) / commercialStages[0].count) * 100
+                    : 0
+                )}
+              </span>
             </div>
-          ))}
-        </div>
+          )}
+        </ChartCard>
+      )}
+
+      {/* Tabela Oportunidades Recentes */}
+      <ChartCard
+        title="Resumo por Pipeline"
+        subtitle="Oportunidades por pipeline e status"
+        className="animate-fade-in-delay-3"
+      >
+        {data.pipelineSummary?.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Pipeline</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Total</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Abertas</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Ganhas</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Perdidas</th>
+                  <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Receita</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pipelineSummary.map((p) => (
+                  <tr key={p.pipelineId} className="border-b border-border/50 hover:bg-bg-hover transition-colors">
+                    <td className="py-3 px-2 font-medium text-text">{p.pipelineName}</td>
+                    <td className="py-3 px-2 text-right text-text-muted">{formatNumber(p.total)}</td>
+                    <td className="py-3 px-2 text-right text-warning">{formatNumber(p.open)}</td>
+                    <td className="py-3 px-2 text-right text-accent">{formatNumber(p.won)}</td>
+                    <td className="py-3 px-2 text-right text-danger">{formatNumber(p.lost)}</td>
+                    <td className="py-3 px-2 text-right font-semibold text-primary-light">{formatBRL(p.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-text-dim text-sm">
+            Dados serao exibidos com oportunidades registradas.
+          </div>
+        )}
       </ChartCard>
     </div>
   );

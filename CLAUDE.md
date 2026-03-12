@@ -2,10 +2,11 @@
 
 ## Projeto
 Dashboard RevOps para Talentus Digital (Mateus Cortez + CybNutri).
-Integra dados do GHL CRM em tempo real com visao por marca, vendedor e produto.
+Integra dados de CRM (GHL), vendas e marketing em tempo real.
+Foco: receita, vendas, performance comercial, marketing.
 
 ## Status
-- **Fase atual:** v1.1 — Build OK, API endpoints funcionando com dados reais GHL
+- **Fase atual:** v2.0 — Graficos de linha, funil piramide, donuts, filtro vendedor/periodo
 - **Deploy:** Pendente Render + Cloudflare DNS (talentusdigital.triadeflow.ai)
 - **Repo:** pendente criar triadeflow-ia/talentus-dashboard
 
@@ -21,24 +22,31 @@ Integra dados do GHL CRM em tempo real com visao por marca, vendedor e produto.
 - **Pipelines (6):** Comercial, Nutricao, Onboarding, Recuperacao, Sucesso, Suporte
 - **Custom Fields usados:** Marca, Produto de Interesse, Vendedor Responsavel
 
-## Funcionalidades
-- **Filtro por Marca:** Mateus Cortez / CybNutri / Todas (global no topbar)
-- **Overview:** 6 KPIs + Funil Comercial + TDI Progress + CRM Structure
+## Funcionalidades (v2.0)
+- **Filtros globais:** Marca (Mateus/CybNutri/Todas) + Vendedor + Periodo (7/15/30/60/90 dias)
+- **Dashboard:** 6 KPIs + Grafico de Linha (diario/acumulado) + Funil Piramide + 3 Donuts + Taxa Conversao + Tabela Pipeline
 - **Pipelines:** 6 pipelines expandiveis com stages e contagem
-- **Vendedores:** Gamificacao (podium, badges gold/silver/bronze), ticket medio, ranking
+- **Vendedores:** Gamificacao (podium, badges), ticket medio, ranking, tabela completa
 - **Produtos:** Agrupados por marca, comparativo de receita
-- **Projeto TDI:** 7 fases com checklist detalhado
 - **Marketing:** Placeholder (Meta Ads, Google Ads — integracao futura)
+
+## Novos Componentes (v2.0)
+- `TimelineChart.jsx` — Grafico de area/linha com Recharts (diario + acumulado)
+- `DonutChart.jsx` — Grafico de rosca com Recharts (status, produto, vendedor)
+- `FunnelChart.jsx` — Refatorado: variante "pyramid" (topo/meio/fim) + variante "bars"
+- `FilterContext.jsx` — Context global para filtro vendedor + periodo
+- Layout com header duplo (info + filtros)
 
 ## Endpoints API
 ```
-GET /api/health           — Status do servidor
-GET /api/overview?brand=  — KPIs agregados (totalLeads, wonOpps, revenue, funil, etc)
-GET /api/pipelines?brand= — Pipelines com stages e contagem de opps
-GET /api/sellers?brand=   — Vendedores com gamificacao (rank, badge, avgTicket)
-GET /api/products?brand=  — Produtos agrupados por marca
-GET /api/project-status   — Progresso TDI (7 fases)
-GET /api/crm-structure    — Resumo da estrutura GHL (fields, pipelines, tags, users)
+GET /api/health                        — Status do servidor
+GET /api/overview?brand=&seller=       — KPIs agregados + funil + pipeline summary
+GET /api/pipelines?brand=&seller=      — Pipelines com stages e contagem
+GET /api/sellers?brand=&seller=        — Vendedores com gamificacao
+GET /api/products?brand=&seller=       — Produtos agrupados por marca
+GET /api/sellers-list                  — Lista de vendedores (p/ dropdown)
+GET /api/timeline?brand=&seller=&days= — Serie temporal (opps/won/lost/revenue por dia)
+GET /api/distribution?brand=&seller=   — Distribuicao (status, produto, marca, vendedor)
 ```
 
 ## Marcas e Produtos
@@ -52,9 +60,17 @@ GET /api/crm-structure    — Resumo da estrutura GHL (fields, pipelines, tags, 
 ## Proximos Passos
 1. [ ] Deploy Render + Cloudflare DNS
 2. [ ] Criar repo GitHub triadeflow-ia/talentus-dashboard
-3. [ ] Integrar GURU checkout (webhook → dados de pagamento)
-4. [ ] Integrar Meta Ads API (campanhas, ROAS)
+3. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
+4. [ ] Integrar Meta Ads API (campanhas, impressoes, cliques, custo)
 5. [ ] Integrar Google Ads API (CPC, conversoes)
-6. [ ] Supabase para historico + futuro IA
-7. [ ] Upload fotos dos vendedores
-8. [ ] Metricas ROAS/ROI/CAC quando marketing conectado
+6. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
+7. [ ] Supabase para historico + futuro IA
+8. [ ] Upload fotos dos vendedores
+
+## Decisao: Metricas CAC/ROAS/ROI/LTV
+Essas metricas dependem de dados que AINDA NAO temos:
+- **CAC** = Custo de Aquisicao = gasto marketing / clientes novos → precisa Meta Ads + Google Ads
+- **ROAS** = Revenue / Ad Spend → precisa dados de custo de campanhas
+- **ROI** = (Receita - Custo) / Custo → precisa custos totais
+- **LTV** = Lifetime Value → precisa historico de compras recorrentes (GURU/Hotmart)
+Quando conectar Meta Ads e plataforma de vendas, essas metricas serao calculadas automaticamente.

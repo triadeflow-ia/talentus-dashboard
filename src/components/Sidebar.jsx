@@ -4,17 +4,15 @@ import {
   GitBranch,
   Users,
   Package,
-  Rocket,
   Megaphone,
   X,
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'Visao Geral', icon: LayoutDashboard },
+  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/pipelines', label: 'Pipelines', icon: GitBranch },
   { path: '/vendedores', label: 'Vendedores', icon: Users },
   { path: '/produtos', label: 'Produtos', icon: Package },
-  { path: '/projeto', label: 'Projeto TDI', icon: Rocket },
   { path: '/marketing', label: 'Marketing', icon: Megaphone },
 ];
 
