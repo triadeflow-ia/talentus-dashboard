@@ -41,26 +41,38 @@ const PIPELINE_NAMES = {
 };
 
 // --- Seller metadata (photos, team info) ---
+// GHL User IDs: Lucas=9AXuakmsPmncaaojIyGw, Gilcilene=2Z0eH6IjgWDqUw5b4fqS,
+// Kyonara=CfeKqpQX6eWKCVVwyRsQ, Mateus=77uDX774vmKxyMxEhfCR, Jessica=W4iYpPWuyc1lVnfyIKa5
 const SELLER_META = {
   'lucas rodrigues': {
     photo: null,
     role: 'Vendedor',
     email: 'profissional.lucasrodrigues@gmail.com',
+    ghlId: '9AXuakmsPmncaaojIyGw',
   },
   'gilcilene lima': {
     photo: null,
-    role: 'Vendedor',
+    role: 'Vendedora',
     email: 'gilcilenelimaadm25@gmail.com',
+    ghlId: '2Z0eH6IjgWDqUw5b4fqS',
   },
   'kyonara gomes': {
     photo: null,
-    role: 'Vendedor',
+    role: 'Vendedora',
     email: 'kyonaragomes@gmail.com',
+    ghlId: 'CfeKqpQX6eWKCVVwyRsQ',
   },
   'mateus cortez': {
     photo: null,
     role: 'CEO / Estrategista',
     email: 'mateuscortez@empresacmcdigital.com',
+    ghlId: '77uDX774vmKxyMxEhfCR',
+  },
+  'jessica monteiro': {
+    photo: null,
+    role: 'Suporte / Admin',
+    email: 'suporte@empresacmcdigital.com',
+    ghlId: 'W4iYpPWuyc1lVnfyIKa5',
   },
 };
 
