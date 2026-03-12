@@ -7,14 +7,16 @@ Foco: receita, vendas, performance comercial, marketing.
 
 ## Status
 - **Fase atual:** v2.0 — Graficos de linha, funil piramide, donuts, filtro vendedor/periodo
-- **Deploy:** Pendente Render + Cloudflare DNS (talentusdigital.triadeflow.ai)
-- **Repo:** pendente criar triadeflow-ia/talentus-dashboard
+- **Deploy:** LIVE Railway — https://faithful-nature-production.up.railway.app
+- **Dominio customizado:** talentus.triadeflow.ai (CNAME pendente no Cloudflare)
+- **Repo:** https://github.com/triadeflow-ia/talentus-dashboard
+- **Railway Project:** https://railway.com/project/13bee088-681c-42f5-ae04-e9e1507fe453
 
 ## Stack
 - **Frontend:** React 19 + Vite 6 + Tailwind v4 + Recharts + React Query + Lucide React
 - **Backend:** Express.js (API proxy para GHL)
 - **Theme:** Dark HUD (Space Grotesk font, neon glows, scanline effects)
-- **Deploy:** Render (render.yaml)
+- **Deploy:** Railway (faithful-nature)
 
 ## GHL Integration
 - **Location:** mOJ0iKBfMFjFxWGdvyvA (Talentus Digital)
@@ -58,14 +60,15 @@ GET /api/distribution?brand=&seller=   — Distribuicao (status, produto, marca,
 - Mateus Cortez (CEO), Davi (Sucesso do Cliente)
 
 ## Proximos Passos
-1. [ ] Deploy Render + Cloudflare DNS
-2. [ ] Criar repo GitHub triadeflow-ia/talentus-dashboard
-3. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
-4. [ ] Integrar Meta Ads API (campanhas, impressoes, cliques, custo)
-5. [ ] Integrar Google Ads API (CPC, conversoes)
-6. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
-7. [ ] Supabase para historico + futuro IA
-8. [ ] Upload fotos dos vendedores
+1. [x] Deploy Railway — LIVE faithful-nature-production.up.railway.app
+2. [x] Criar repo GitHub triadeflow-ia/talentus-dashboard
+3. [ ] Configurar DNS Cloudflare — CNAME talentus → ruiw0bdj.up.railway.app (token CF expirado)
+4. [ ] Conectar Meta Ads API (token de acesso + App aprovado)
+5. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
+6. [ ] Integrar Google Ads API (CPC, conversoes)
+7. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
+8. [ ] Supabase para historico + futuro IA
+9. [ ] Upload fotos dos vendedores
 
 ## Decisao: Metricas CAC/ROAS/ROI/LTV
 Essas metricas dependem de dados que AINDA NAO temos:
