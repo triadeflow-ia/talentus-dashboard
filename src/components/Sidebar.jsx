@@ -5,6 +5,7 @@ import {
   Users,
   Package,
   Megaphone,
+  Trophy,
   X,
 } from 'lucide-react';
 
@@ -12,6 +13,7 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/pipelines', label: 'Pipelines', icon: GitBranch },
   { path: '/vendedores', label: 'Vendedores', icon: Users },
+  { path: '/podium', label: 'Podium', icon: Trophy },
   { path: '/produtos', label: 'Produtos', icon: Package },
   { path: '/marketing', label: 'Marketing', icon: Megaphone },
 ];

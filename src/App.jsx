@@ -5,6 +5,7 @@ import PipelinePage from './pages/PipelinePage';
 import VendedoresPage from './pages/VendedoresPage';
 import ProdutosPage from './pages/ProdutosPage';
 import MarketingPage from './pages/MarketingPage';
+import PodiumPage from './pages/PodiumPage';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="/" element={<OverviewPage />} />
           <Route path="/pipelines" element={<PipelinePage />} />
           <Route path="/vendedores" element={<VendedoresPage />} />
+          <Route path="/podium" element={<PodiumPage />} />
           <Route path="/produtos" element={<ProdutosPage />} />
           <Route path="/marketing" element={<MarketingPage />} />
         </Route>
