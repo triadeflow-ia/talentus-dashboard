@@ -319,7 +319,7 @@ app.get('/api/pipelines', async (req, res) => {
   }
 });
 
-// Sellers — with gamification data
+// Sellers — comprehensive manager view
 app.get('/api/sellers', async (req, res) => {
   try {
     const brand = req.query.brand;
@@ -329,6 +329,7 @@ app.get('/api/sellers', async (req, res) => {
     allOpps = filterByBrand(allOpps, brand);
     allOpps = filterBySeller(allOpps, seller);
 
+    const now = new Date();
     const sellerMap = {};
 
     for (const opp of allOpps) {
@@ -339,21 +340,62 @@ app.get('/api/sellers', async (req, res) => {
           name: vendedor,
           totalOpps: 0, won: 0, lost: 0, open: 0, abandoned: 0,
           revenue: 0, tickets: [],
+          closingDays: [],     // days to close each won opp
+          openAgingDays: [],   // how many days each open opp has been sitting
+          lostReasons: [],     // loss reasons
+          products: {},        // products sold { name: { count, revenue } }
+          stages: {},          // current stage distribution for open opps
+          biggestSale: 0,
+          recentWon30d: 0,     // won in last 30 days
+          recentRevenue30d: 0, // revenue in last 30 days
         };
       }
 
       const s = sellerMap[vendedor];
       s.totalOpps++;
 
+      const createdAt = new Date(opp.createdAt || opp.dateAdded);
+      const produto = getCustomField(opp, 'produto') || 'Nao especificado';
+
       if (opp.status === 'won') {
         s.won++;
         const val = parseFloat(opp.monetaryValue) || 0;
         s.revenue += val;
         if (val > 0) s.tickets.push(val);
+        if (val > s.biggestSale) s.biggestSale = val;
+
+        // Closing velocity: days from creation to last status change
+        const updatedAt = new Date(opp.lastStatusChangeAt || opp.updatedAt || opp.createdAt);
+        const diffDays = Math.max(1, Math.round((updatedAt - createdAt) / (1000 * 60 * 60 * 24)));
+        s.closingDays.push(diffDays);
+
+        // Recent wins (30 days)
+        const daysSinceWon = Math.round((now - updatedAt) / (1000 * 60 * 60 * 24));
+        if (daysSinceWon <= 30) {
+          s.recentWon30d++;
+          s.recentRevenue30d += val;
+        }
+
+        // Products won
+        if (!s.products[produto]) s.products[produto] = { count: 0, revenue: 0 };
+        s.products[produto].count++;
+        s.products[produto].revenue += val;
+
       } else if (opp.status === 'lost') {
         s.lost++;
+        const lossReason = getCustomField(opp, 'motivo') || opp.lostReasonId || null;
+        if (lossReason) s.lostReasons.push(lossReason);
+
       } else if (opp.status === 'open') {
         s.open++;
+        // Aging: days since creation
+        const agingDays = Math.round((now - createdAt) / (1000 * 60 * 60 * 24));
+        s.openAgingDays.push(agingDays);
+
+        // Stage distribution
+        const stageName = opp.pipelineStageName || opp.pipelineStageId || 'Desconhecido';
+        s.stages[stageName] = (s.stages[stageName] || 0) + 1;
+
       } else if (opp.status === 'abandoned') {
         s.abandoned++;
       }
@@ -362,8 +404,19 @@ app.get('/api/sellers', async (req, res) => {
     const sellers = Object.values(sellerMap).map(s => {
       const meta = SELLER_META[s.name.toLowerCase()] || {};
       const avgTicket = s.tickets.length > 0
-        ? s.tickets.reduce((a, b) => a + b, 0) / s.tickets.length
-        : 0;
+        ? s.tickets.reduce((a, b) => a + b, 0) / s.tickets.length : 0;
+      const avgClosingDays = s.closingDays.length > 0
+        ? Math.round(s.closingDays.reduce((a, b) => a + b, 0) / s.closingDays.length) : null;
+      const avgOpenAging = s.openAgingDays.length > 0
+        ? Math.round(s.openAgingDays.reduce((a, b) => a + b, 0) / s.openAgingDays.length) : null;
+      const maxOpenAging = s.openAgingDays.length > 0
+        ? Math.max(...s.openAgingDays) : null;
+
+      // Loss reason summary
+      const lostReasonCounts = {};
+      for (const r of s.lostReasons) {
+        lostReasonCounts[r] = (lostReasonCounts[r] || 0) + 1;
+      }
 
       return {
         name: s.name,
@@ -377,7 +430,28 @@ app.get('/api/sellers', async (req, res) => {
         abandoned: s.abandoned,
         revenue: s.revenue,
         avgTicket,
+        biggestSale: s.biggestSale,
         conversionRate: s.totalOpps > 0 ? (s.won / s.totalOpps) * 100 : 0,
+        // Velocity
+        avgClosingDays,
+        // Pipeline health
+        avgOpenAging,
+        maxOpenAging,
+        openStages: Object.entries(s.stages).map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count),
+        // Recent performance (30d)
+        recentWon30d: s.recentWon30d,
+        recentRevenue30d: s.recentRevenue30d,
+        // Products
+        topProducts: Object.entries(s.products)
+          .map(([name, d]) => ({ name, ...d }))
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 5),
+        // Loss reasons
+        lostReasons: Object.entries(lostReasonCounts)
+          .map(([reason, count]) => ({ reason, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5),
       };
     });
 
@@ -392,7 +466,41 @@ app.get('/api/sellers', async (req, res) => {
       else s.badge = null;
     });
 
-    res.json({ sellers });
+    // Team KPIs
+    const teamTotalOpps = sellers.reduce((sum, s) => sum + s.totalOpps, 0);
+    const teamWon = sellers.reduce((sum, s) => sum + s.won, 0);
+    const teamLost = sellers.reduce((sum, s) => sum + s.lost, 0);
+    const teamOpen = sellers.reduce((sum, s) => sum + s.open, 0);
+    const teamRevenue = sellers.reduce((sum, s) => sum + s.revenue, 0);
+    const teamAvgTicket = teamWon > 0 ? teamRevenue / teamWon : 0;
+    const teamConversion = teamTotalOpps > 0 ? (teamWon / teamTotalOpps) * 100 : 0;
+    const allClosingDays = sellers.filter(s => s.avgClosingDays != null).map(s => s.avgClosingDays);
+    const teamAvgClosing = allClosingDays.length > 0
+      ? Math.round(allClosingDays.reduce((a, b) => a + b, 0) / allClosingDays.length) : null;
+    const teamRecentWon = sellers.reduce((sum, s) => sum + s.recentWon30d, 0);
+    const teamRecentRevenue = sellers.reduce((sum, s) => sum + s.recentRevenue30d, 0);
+
+    // Revenue concentration — % of top seller
+    const topSellerRevenue = sellers.length > 0 ? sellers[0].revenue : 0;
+    const revenueConcentration = teamRevenue > 0 ? (topSellerRevenue / teamRevenue) * 100 : 0;
+
+    res.json({
+      sellers,
+      teamKPIs: {
+        totalOpps: teamTotalOpps,
+        won: teamWon,
+        lost: teamLost,
+        open: teamOpen,
+        revenue: teamRevenue,
+        avgTicket: teamAvgTicket,
+        conversionRate: teamConversion,
+        avgClosingDays: teamAvgClosing,
+        recentWon30d: teamRecentWon,
+        recentRevenue30d: teamRecentRevenue,
+        revenueConcentration,
+        activeSellers: sellers.filter(s => s.totalOpps > 0).length,
+      },
+    });
   } catch (error) {
     console.error('Error in /api/sellers:', error.message);
     res.status(500).json({ error: 'Failed to fetch sellers', details: error.message });
