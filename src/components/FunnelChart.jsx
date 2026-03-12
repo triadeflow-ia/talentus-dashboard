@@ -1,13 +1,13 @@
 import { formatNumber, formatPercent } from '../lib/utils';
 
 const stageColors = [
-  '#6366f1',
-  '#818cf8',
-  '#a78bfa',
-  '#c4b5fd',
-  '#93c5fd',
-  '#67e8f9',
-  '#10b981',
+  '#26428B',
+  '#3a5ca8',
+  '#4d6fb8',
+  '#C0B289',
+  '#7a8fb8',
+  '#94a8cc',
+  '#d4c9a5',
 ];
 
 const funnelLabels = ['TOPO', 'TOPO', 'MEIO', 'MEIO', 'FIM', 'FIM', 'FIM'];

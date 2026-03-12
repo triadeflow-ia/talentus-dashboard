@@ -9,8 +9,8 @@ import { api } from '../lib/api';
 
 const brandOptions = [
   { value: 'all', label: 'Todas as Marcas' },
-  { value: 'mateus', label: 'Mateus Cortez', color: '#6366f1' },
-  { value: 'cyb', label: 'CybNutri', color: '#10b981' },
+  { value: 'mateus', label: 'Mateus Cortez', color: '#26428B' },
+  { value: 'cyb', label: 'CybNutri', color: '#C0B289' },
 ];
 
 const periodOptions = [

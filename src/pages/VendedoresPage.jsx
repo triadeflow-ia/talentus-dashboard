@@ -11,9 +11,9 @@ import { formatBRL, formatNumber, formatPercent } from '../lib/utils';
 import ChartCard from '../components/ChartCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
 
-const avatarColors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const avatarColors = ['#26428B', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-const DONUT_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const DONUT_COLORS = ['#26428B', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const badgeConfig = {
   gold: { icon: Crown, bg: 'bg-warning/20', text: 'text-warning', label: '1o Lugar', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.4)]' },

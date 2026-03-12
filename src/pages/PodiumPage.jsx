@@ -17,7 +17,7 @@ const PODIUM_COLORS = {
 };
 
 const POSITION_ICONS = { 1: Crown, 2: Medal, 3: Award };
-const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const AVATAR_COLORS = ['#26428B', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function PodiumPage() {
   const { brand } = useBrand();
@@ -129,7 +129,7 @@ export default function PodiumPage() {
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <RadarChart data={radarData}>
-              <PolarGrid stroke="#1e293b" />
+              <PolarGrid stroke="#1e2d50" />
               <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
               {top3.map((_, i) => (

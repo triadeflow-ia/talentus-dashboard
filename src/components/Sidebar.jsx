@@ -8,6 +8,7 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
+import logoWhite from '../assets/logo-talentus-white.png';
 
 const navItems = [
   { path: '/', label: 'Painel', icon: LayoutDashboard },
@@ -38,21 +39,8 @@ export default function Sidebar({ open, onClose }) {
         `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-6 py-6 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-lg">T</span>
-            </div>
-            <div className="leading-tight">
-              <span className="text-primary-light font-bold text-base tracking-wide">
-                TALENTUS
-              </span>
-              <br />
-              <span className="text-text-muted text-xs tracking-widest uppercase">
-                Digital
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center justify-between px-5 py-5 border-b border-border">
+          <img src={logoWhite} alt="Talentus" className="h-10 w-auto" />
           <button
             onClick={onClose}
             className="lg:hidden text-text-muted hover:text-text p-1"
@@ -73,7 +61,7 @@ export default function Sidebar({ open, onClose }) {
                 `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group
                 ${
                   isActive
-                    ? 'bg-primary/10 text-primary-light border-l-2 border-primary glow-primary'
+                    ? 'bg-accent/10 text-accent border-l-2 border-accent glow-accent'
                     : 'text-text-muted hover:text-text hover:bg-bg-hover border-l-2 border-transparent'
                 }`
               }
