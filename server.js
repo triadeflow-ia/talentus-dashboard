@@ -112,30 +112,93 @@ if (!GHL_TOKEN) console.warn('⚠️  GHL_TOKEN not set — GHL endpoints will f
 if (!GHL_LOCATION_ID) console.warn('⚠️  GHL_LOCATION_ID not set — GHL endpoints will fail');
 if (!META_ACCESS_TOKEN) console.warn('ℹ️  META_ACCESS_TOKEN not set — Meta Ads disabled');
 
-// --- In-memory cache for GHL data (avoid redundant API calls) ---
+// --- In-memory cache ---
 const cache = {
   data: null,
   timestamp: 0,
-  ttl: 5 * 60 * 1000, // 5 minutes
+  ttl: 2 * 60 * 1000, // 2 minutes
   fetching: null,
 };
+
+// Read opportunities from Supabase (no rate limit, fast)
+async function getOpportunitiesFromSupabase() {
+  const { getSupabase } = await import('./sync.js');
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  const { data, error } = await sb.from('opportunities').select('*');
+  if (error) {
+    console.error('[supabase] Read error:', error.message);
+    return null;
+  }
+  if (!data || data.length === 0) return null;
+
+  // Group by pipeline_id and convert to GHL-like format
+  const pipelineMap = {};
+  for (const row of data) {
+    const pid = row.pipeline_id;
+    if (!pipelineMap[pid]) pipelineMap[pid] = [];
+    pipelineMap[pid].push({
+      id: row.id,
+      pipelineId: row.pipeline_id,
+      pipelineStageId: row.pipeline_stage_id,
+      pipelineStageName: row.pipeline_stage_name,
+      status: row.status,
+      contactId: row.contact_id,
+      contact: { name: row.contact_name, email: row.contact_email, phone: row.contact_phone },
+      contactName: row.contact_name,
+      monetaryValue: row.monetary_value,
+      assignedTo: row.assigned_to,
+      tags: row.tags || [],
+      createdAt: row.created_at,
+      dateAdded: row.created_at,
+      updatedAt: row.updated_at,
+      customFields: [
+        { key: 'marca', value: row.marca },
+        { key: 'produto', value: row.produto },
+        { key: 'vendedor_responsavel', value: row.vendedor },
+        { key: 'motivo_perda', value: row.loss_reason },
+        { key: 'origem', value: row.source },
+      ].filter(f => f.value),
+    });
+  }
+
+  return Object.entries(pipelineMap).map(([pipelineId, opportunities]) => ({
+    pipelineId,
+    opportunities,
+  }));
+}
 
 async function getCachedOpportunities() {
   const now = Date.now();
   if (cache.data && (now - cache.timestamp) < cache.ttl) {
     return cache.data;
   }
-  // Prevent thundering herd — reuse in-flight request
   if (cache.fetching) return cache.fetching;
-  cache.fetching = fetchAllPipelineOpportunities().then(results => {
+
+  cache.fetching = (async () => {
+    // Try Supabase first (no rate limit)
+    const supabaseData = await getOpportunitiesFromSupabase();
+    if (supabaseData && supabaseData.length > 0) {
+      console.log(`[cache] Loaded ${supabaseData.reduce((n, p) => n + p.opportunities.length, 0)} opps from Supabase`);
+      cache.data = supabaseData;
+      cache.timestamp = Date.now();
+      cache.fetching = null;
+      return supabaseData;
+    }
+
+    // Fallback to GHL API
+    console.log('[cache] Supabase empty, falling back to GHL API...');
+    const results = await fetchAllPipelineOpportunities();
     cache.data = results;
     cache.timestamp = Date.now();
     cache.fetching = null;
     return results;
-  }).catch(err => {
+  })().catch(err => {
     cache.fetching = null;
     throw err;
   });
+
   return cache.fetching;
 }
 
