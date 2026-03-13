@@ -924,12 +924,13 @@ app.get('/api/meta/accounts', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, accounts: [] });
     const data = await metaFetch('/me/adaccounts', {
-      fields: 'name,account_id,account_status,currency,business_name',
+      fields: 'name,account_id,account_status,currency,business_name,amount_spent',
       limit: '50',
     });
     const accounts = (data?.data || [])
       .filter(a => a.account_status === 1) // only active
-      .map(a => ({ id: a.id, accountId: a.account_id, name: a.name, business: a.business_name || '', currency: a.currency }));
+      .map(a => ({ id: a.id, accountId: a.account_id, name: a.name, business: a.business_name || '', currency: a.currency, amountSpent: parseInt(a.amount_spent || '0') }))
+      .sort((a, b) => b.amountSpent - a.amountSpent); // most active account first
     res.json({ connected: true, accounts });
   } catch (error) {
     console.error('Error in /api/meta/accounts:', error.message);
