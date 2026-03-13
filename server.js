@@ -1058,18 +1058,51 @@ app.get('/api/meta/status', (req, res) => {
   res.json({ connected: !!META_ACCESS_TOKEN });
 });
 
-// --- Meta: list all ad accounts ---
+// --- Helper: get Supabase client for Meta reads ---
+async function getMetaSupabase() {
+  try {
+    const { getSupabase } = await import('./sync.js');
+    return getSupabase();
+  } catch { return null; }
+}
+
+// --- Meta: list all ad accounts (from Supabase entities, fallback Meta API) ---
 app.get('/api/meta/accounts', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, accounts: [] });
+
+    // Try Supabase first — get distinct accounts from meta_ads_entities
+    const sb = await getMetaSupabase();
+    if (sb) {
+      const { data: entities } = await sb.from('meta_ads_entities').select('account_id').eq('type', 'campaign');
+      if (entities && entities.length > 0) {
+        const accountIds = [...new Set(entities.map(e => e.account_id))];
+        // Get account-level spend totals from daily table
+        const accounts = [];
+        for (const accId of accountIds) {
+          const { data: spendData } = await sb.from('meta_ads_daily')
+            .select('account_name, spend')
+            .eq('account_id', accId)
+            .eq('level', 'account');
+          const totalSpend = (spendData || []).reduce((sum, r) => sum + (r.spend || 0), 0);
+          const accName = spendData?.[0]?.account_name || accId;
+          accounts.push({ id: accId, accountId: accId.replace('act_', ''), name: accName, business: '', currency: 'BRL', amountSpent: Math.round(totalSpend * 100) });
+        }
+        accounts.sort((a, b) => b.amountSpent - a.amountSpent);
+        console.log(`[meta] Accounts from Supabase: ${accounts.length}`);
+        return res.json({ connected: true, accounts });
+      }
+    }
+
+    // Fallback: Meta API
     const data = await metaFetch('/me/adaccounts', {
       fields: 'name,account_id,account_status,currency,business_name,amount_spent',
       limit: '50',
     });
     const accounts = (data?.data || [])
-      .filter(a => a.account_status === 1) // only active
+      .filter(a => a.account_status === 1)
       .map(a => ({ id: a.id, accountId: a.account_id, name: a.name, business: a.business_name || '', currency: a.currency, amountSpent: parseInt(a.amount_spent || '0') }))
-      .sort((a, b) => b.amountSpent - a.amountSpent); // most active account first
+      .sort((a, b) => b.amountSpent - a.amountSpent);
     res.json({ connected: true, accounts });
   } catch (error) {
     console.error('Error in /api/meta/accounts:', error.message);
@@ -1077,7 +1110,7 @@ app.get('/api/meta/accounts', async (req, res) => {
   }
 });
 
-// --- Meta: account insights (KPIs) — supports multi-account ---
+// --- Meta: account insights (KPIs) — Supabase first ---
 app.get('/api/meta/insights', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, data: null });
@@ -1086,6 +1119,49 @@ app.get('/api/meta/insights', async (req, res) => {
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
+    // Try Supabase first
+    const sb = await getMetaSupabase();
+    if (sb) {
+      const { data: rows } = await sb.from('meta_ads_daily')
+        .select('*')
+        .eq('account_id', accountId)
+        .eq('level', 'account')
+        .gte('date', since)
+        .lte('date', until);
+
+      if (rows && rows.length > 0) {
+        const agg = {
+          spend: 0, impressions: 0, reach: 0, clicks: 0, uniqueClicks: 0,
+          leads: 0, purchases: 0, purchaseValue: 0, linkClicks: 0, landingPageViews: 0,
+          cpc: 0, cpm: 0, ctr: 0, frequency: 0, cpl: 0, cpa: 0,
+        };
+        for (const r of rows) {
+          agg.spend += r.spend || 0;
+          agg.impressions += r.impressions || 0;
+          agg.reach += r.reach || 0;
+          agg.clicks += r.clicks || 0;
+          agg.uniqueClicks += r.unique_clicks || 0;
+          agg.leads += r.leads || 0;
+          agg.purchases += r.purchases || 0;
+          agg.purchaseValue += r.purchase_value || 0;
+          agg.linkClicks += r.link_clicks || 0;
+          agg.landingPageViews += r.landing_page_views || 0;
+        }
+        // Calculate derived metrics
+        if (agg.clicks > 0) agg.cpc = agg.spend / agg.clicks;
+        if (agg.impressions > 0) agg.cpm = (agg.spend / agg.impressions) * 1000;
+        if (agg.impressions > 0) agg.ctr = (agg.clicks / agg.impressions) * 100;
+        if (agg.leads > 0) agg.cpl = agg.spend / agg.leads;
+        if (agg.purchases > 0) agg.cpa = agg.spend / agg.purchases;
+        if (agg.reach > 0) agg.frequency = agg.impressions / agg.reach;
+        agg.costPerUniqueClick = agg.uniqueClicks > 0 ? agg.spend / agg.uniqueClicks : 0;
+        agg.period = { since, until, days: parseInt(days) };
+        console.log(`[meta] Insights from Supabase: ${rows.length} days, spend=${agg.spend.toFixed(2)}`);
+        return res.json({ connected: true, data: agg });
+      }
+    }
+
+    // Fallback: Meta API
     const data = await metaFetch(`/${accountId}/insights`, {
       fields: INSIGHTS_FIELDS,
       time_range: JSON.stringify({ since, until }),
@@ -1095,7 +1171,6 @@ app.get('/api/meta/insights', async (req, res) => {
     const formatted = formatInsightsRow(row);
     formatted.costPerUniqueClick = parseFloat(row.cost_per_unique_click || 0);
     formatted.period = { since, until, days: parseInt(days) };
-
     res.json({ connected: true, data: formatted });
   } catch (error) {
     console.error('Error in /api/meta/insights:', error.message);
@@ -1103,7 +1178,7 @@ app.get('/api/meta/insights', async (req, res) => {
   }
 });
 
-// --- Meta: campaigns with insights ---
+// --- Meta: campaigns with insights — Supabase first ---
 app.get('/api/meta/campaigns', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, campaigns: [] });
@@ -1112,14 +1187,70 @@ app.get('/api/meta/campaigns', async (req, res) => {
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
+    // Try Supabase first
+    const sb = await getMetaSupabase();
+    if (sb) {
+      // Get campaigns from entities table
+      const { data: campEntities } = await sb.from('meta_ads_entities')
+        .select('*')
+        .eq('account_id', accountId)
+        .eq('type', 'campaign');
+
+      // Get campaign insights from daily table
+      const { data: dailyRows } = await sb.from('meta_ads_daily')
+        .select('*')
+        .eq('account_id', accountId)
+        .eq('level', 'campaign')
+        .gte('date', since)
+        .lte('date', until);
+
+      if (campEntities && campEntities.length > 0) {
+        // Aggregate daily insights per campaign
+        const insightsMap = {};
+        for (const r of (dailyRows || [])) {
+          if (!r.campaign_id) continue;
+          if (!insightsMap[r.campaign_id]) {
+            insightsMap[r.campaign_id] = { spend: 0, impressions: 0, reach: 0, clicks: 0, uniqueClicks: 0, leads: 0, purchases: 0, purchaseValue: 0, linkClicks: 0, landingPageViews: 0, cpl: 0, cpa: 0 };
+          }
+          const a = insightsMap[r.campaign_id];
+          a.spend += r.spend || 0;
+          a.impressions += r.impressions || 0;
+          a.reach += r.reach || 0;
+          a.clicks += r.clicks || 0;
+          a.uniqueClicks += (r.unique_clicks || 0);
+          a.leads += r.leads || 0;
+          a.purchases += r.purchases || 0;
+          a.purchaseValue += r.purchase_value || 0;
+          a.linkClicks += r.link_clicks || 0;
+          a.landingPageViews += r.landing_page_views || 0;
+        }
+        // Calculate derived metrics
+        for (const a of Object.values(insightsMap)) {
+          if (a.clicks > 0) a.cpc = a.spend / a.clicks;
+          if (a.impressions > 0) { a.cpm = (a.spend / a.impressions) * 1000; a.ctr = (a.clicks / a.impressions) * 100; }
+          if (a.leads > 0) a.cpl = a.spend / a.leads;
+          if (a.purchases > 0) a.cpa = a.spend / a.purchases;
+          if (a.reach > 0) a.frequency = a.impressions / a.reach;
+        }
+
+        const result = campEntities.map(c => ({
+          id: c.id, name: c.name, status: c.status, objective: c.objective,
+          dailyBudget: c.daily_budget || null,
+          insights: insightsMap[c.id] || null,
+        }));
+        result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
+        console.log(`[meta] Campaigns from Supabase: ${result.length}`);
+        return res.json({ connected: true, campaigns: result, total: result.length, period: { since, until } });
+      }
+    }
+
+    // Fallback: Meta API
     const campaignsData = await metaFetch(`/${accountId}/campaigns`, {
       fields: 'name,status,objective,daily_budget,lifetime_budget,start_time,stop_time',
       limit: '200',
       filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }]),
     });
     const campaigns = campaignsData?.data || [];
-
-    // Fetch campaign-level insights in one call
     const insightsData = await metaFetch(`/${accountId}/insights`, {
       fields: `campaign_id,campaign_name,${INSIGHTS_FIELDS}`,
       time_range: JSON.stringify({ since, until }),
@@ -1130,14 +1261,12 @@ app.get('/api/meta/campaigns', async (req, res) => {
     for (const row of (insightsData?.data || [])) {
       insightsMap[row.campaign_id] = formatInsightsRow(row);
     }
-
     const result = campaigns.map(c => ({
       id: c.id, name: c.name, status: c.status, objective: c.objective,
       dailyBudget: c.daily_budget ? parseFloat(c.daily_budget) / 100 : null,
       insights: insightsMap[c.id] || null,
     }));
     result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
-
     res.json({ connected: true, campaigns: result, total: result.length, period: { since, until } });
   } catch (error) {
     console.error('Error in /api/meta/campaigns:', error.message);
@@ -1145,7 +1274,7 @@ app.get('/api/meta/campaigns', async (req, res) => {
   }
 });
 
-// --- Meta: ad sets with insights ---
+// --- Meta: ad sets with insights — Supabase first ---
 app.get('/api/meta/adsets', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, adsets: [] });
@@ -1155,15 +1284,33 @@ app.get('/api/meta/adsets', async (req, res) => {
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
-    // If campaign_id, fetch adsets for that campaign. Otherwise, fetch all for account.
+    // Try Supabase first
+    const sb = await getMetaSupabase();
+    if (sb) {
+      let query = sb.from('meta_ads_entities').select('*').eq('account_id', accountId).eq('type', 'adset');
+      if (campaignId) query = query.eq('parent_id', campaignId);
+      const { data: adsetEntities } = await query;
+
+      if (adsetEntities && adsetEntities.length > 0) {
+        // No adset-level daily data in current sync — return entities with null insights
+        const result = adsetEntities.map(a => ({
+          id: a.id, name: a.name, status: a.status, campaignId: a.parent_id,
+          dailyBudget: a.daily_budget || null,
+          optimizationGoal: a.optimization_goal,
+          insights: null,
+        }));
+        console.log(`[meta] Adsets from Supabase: ${result.length}`);
+        return res.json({ connected: true, adsets: result, total: result.length, period: { since, until } });
+      }
+    }
+
+    // Fallback: Meta API
     const parentPath = campaignId ? `/${campaignId}/adsets` : `/${accountId}/adsets`;
     const adsetsData = await metaFetch(parentPath, {
       fields: 'name,status,campaign_id,daily_budget,lifetime_budget,targeting,optimization_goal',
       limit: '200',
     });
     const adsets = adsetsData?.data || [];
-
-    // Insights at adset level
     const insightsData = await metaFetch(`/${accountId}/insights`, {
       fields: `adset_id,adset_name,${INSIGHTS_FIELDS}`,
       time_range: JSON.stringify({ since, until }),
@@ -1175,7 +1322,6 @@ app.get('/api/meta/adsets', async (req, res) => {
     for (const row of (insightsData?.data || [])) {
       insightsMap[row.adset_id] = formatInsightsRow(row);
     }
-
     const result = adsets.map(a => ({
       id: a.id, name: a.name, status: a.status, campaignId: a.campaign_id,
       dailyBudget: a.daily_budget ? parseFloat(a.daily_budget) / 100 : null,
@@ -1183,7 +1329,6 @@ app.get('/api/meta/adsets', async (req, res) => {
       insights: insightsMap[a.id] || null,
     }));
     result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
-
     res.json({ connected: true, adsets: result, total: result.length, period: { since, until } });
   } catch (error) {
     console.error('Error in /api/meta/adsets:', error.message);
@@ -1191,7 +1336,7 @@ app.get('/api/meta/adsets', async (req, res) => {
   }
 });
 
-// --- Meta: individual ads with insights ---
+// --- Meta: individual ads with insights — Supabase first ---
 app.get('/api/meta/ads', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, ads: [] });
@@ -1201,13 +1346,31 @@ app.get('/api/meta/ads', async (req, res) => {
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
+    // Try Supabase first
+    const sb = await getMetaSupabase();
+    if (sb) {
+      let query = sb.from('meta_ads_entities').select('*').eq('account_id', accountId).eq('type', 'ad');
+      if (adsetId) query = query.eq('parent_id', adsetId);
+      const { data: adEntities } = await query;
+
+      if (adEntities && adEntities.length > 0) {
+        const result = adEntities.map(a => ({
+          id: a.id, name: a.name, status: a.status, adsetId: a.parent_id, campaignId: null,
+          thumbnail: a.thumbnail_url || null,
+          insights: null,
+        }));
+        console.log(`[meta] Ads from Supabase: ${result.length}`);
+        return res.json({ connected: true, ads: result, total: result.length, period: { since, until } });
+      }
+    }
+
+    // Fallback: Meta API
     const parentPath = adsetId ? `/${adsetId}/ads` : `/${accountId}/ads`;
     const adsData = await metaFetch(parentPath, {
       fields: 'name,status,adset_id,campaign_id,creative{thumbnail_url,title,body}',
       limit: '200',
     });
     const ads = adsData?.data || [];
-
     const insightsData = await metaFetch(`/${accountId}/insights`, {
       fields: `ad_id,ad_name,${INSIGHTS_FIELDS}`,
       time_range: JSON.stringify({ since, until }),
@@ -1219,14 +1382,12 @@ app.get('/api/meta/ads', async (req, res) => {
     for (const row of (insightsData?.data || [])) {
       insightsMap[row.ad_id] = formatInsightsRow(row);
     }
-
     const result = ads.map(a => ({
       id: a.id, name: a.name, status: a.status, adsetId: a.adset_id, campaignId: a.campaign_id,
       thumbnail: a.creative?.thumbnail_url || null,
       insights: insightsMap[a.id] || null,
     }));
     result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
-
     res.json({ connected: true, ads: result, total: result.length, period: { since, until } });
   } catch (error) {
     console.error('Error in /api/meta/ads:', error.message);
@@ -1234,7 +1395,7 @@ app.get('/api/meta/ads', async (req, res) => {
   }
 });
 
-// --- Meta: daily timeline (supports multi-account + campaign filter) ---
+// --- Meta: daily timeline — Supabase first ---
 app.get('/api/meta/timeline', async (req, res) => {
   try {
     if (!META_ACCESS_TOKEN) return res.json({ connected: false, timeline: [] });
@@ -1244,6 +1405,39 @@ app.get('/api/meta/timeline', async (req, res) => {
     const campaignId = req.query.campaign_id;
     const { since, until } = getDateRange(days);
 
+    // Try Supabase first
+    const sb = await getMetaSupabase();
+    if (sb) {
+      let query = sb.from('meta_ads_daily').select('*')
+        .eq('account_id', accountId)
+        .gte('date', since)
+        .lte('date', until)
+        .order('date', { ascending: true });
+
+      if (campaignId) {
+        query = query.eq('campaign_id', campaignId).eq('level', 'campaign');
+      } else {
+        query = query.eq('level', 'account');
+      }
+
+      const { data: rows } = await query;
+      if (rows && rows.length > 0) {
+        const timeline = rows.map(r => ({
+          date: r.date,
+          spend: r.spend || 0,
+          impressions: r.impressions || 0,
+          clicks: r.clicks || 0,
+          reach: r.reach || 0,
+          leads: r.leads || 0,
+          linkClicks: r.link_clicks || 0,
+          landingPageViews: r.landing_page_views || 0,
+        }));
+        console.log(`[meta] Timeline from Supabase: ${timeline.length} days`);
+        return res.json({ connected: true, timeline, period: { since, until, days: parseInt(days) } });
+      }
+    }
+
+    // Fallback: Meta API
     const data = await metaFetch(`/${accountId}/insights`, {
       fields: 'spend,impressions,clicks,actions,reach',
       time_range: JSON.stringify({ since, until }),
@@ -1252,7 +1446,6 @@ app.get('/api/meta/timeline', async (req, res) => {
       limit: '500',
       ...(campaignId ? { filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: campaignId }]) } : {}),
     });
-
     const timeline = (data?.data || []).map(row => {
       const ex = extractActions(row);
       return {
@@ -1266,7 +1459,6 @@ app.get('/api/meta/timeline', async (req, res) => {
         landingPageViews: ex.landingPageViews,
       };
     });
-
     res.json({ connected: true, timeline, period: { since, until, days: parseInt(days) } });
   } catch (error) {
     console.error('Error in /api/meta/timeline:', error.message);
