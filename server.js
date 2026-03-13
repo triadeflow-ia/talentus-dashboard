@@ -647,6 +647,26 @@ app.get('/api/crm-structure', async (req, res) => {
   }
 });
 
+// DEBUG: raw opp data to diagnose seller name resolution
+app.get('/api/debug-sellers', async (req, res) => {
+  try {
+    const pipelineResults = await fetchAllPipelineOpportunities();
+    const allOpps = pipelineResults.flatMap(r => r.opportunities);
+    const sample = allOpps.slice(0, 5).map(opp => ({
+      id: opp.id,
+      assignedTo: opp.assignedTo,
+      customFieldVendedor: getCustomField(opp, 'vendedor'),
+      customFieldVendedorResp: getCustomField(opp, 'vendedor_responsavel', 'vendedor responsavel'),
+      resolvedName: resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo),
+      allCustomFields: (opp.customFields || []).map(f => ({ key: f.key || f.fieldKey, value: f.value })),
+      GHL_ID_TO_NAME_keys: Object.keys(GHL_ID_TO_NAME),
+    }));
+    res.json({ totalOpps: allOpps.length, sample });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Sellers list (for dropdown filter)
 app.get('/api/sellers-list', async (req, res) => {
   try {
