@@ -191,7 +191,7 @@ export default function TrafegoPage() {
 
   // --- Data ---
   const accounts = accountsData?.accounts || [];
-  const d = insightsData?.data || {};
+  const accountInsights = insightsData?.data || {};
   const campaigns = campaignsData?.campaigns || [];
   const adsets = adsetsData?.adsets || [];
   const ads = adsData?.ads || [];
@@ -199,6 +199,11 @@ export default function TrafegoPage() {
     ...t,
     label: new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
   }));
+
+  // Use insights from selected level (adset > campaign > account)
+  const selectedAdsetObj = selectedAdset !== 'all' && adsets.find(a => a.id === selectedAdset);
+  const selectedCampaignObj = selectedCampaign !== 'all' && campaigns.find(c => c.id === selectedCampaign);
+  const d = (selectedAdsetObj?.insights) || (selectedCampaignObj?.insights) || accountInsights;
 
   // Rates
   const lpViewRate = d.linkClicks > 0 ? (d.landingPageViews / d.linkClicks) * 100 : 0;
@@ -227,7 +232,10 @@ export default function TrafegoPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-text">Trafego & Criativos</h2>
-          <p className="text-sm text-text-muted mt-1">Meta Ads — Funil completo — ultimos {period} dias</p>
+          <p className="text-sm text-text-muted mt-1">
+            Meta Ads — ultimos {period} dias
+            {selectedAdsetObj ? ` — Conjunto: ${selectedAdsetObj.name}` : selectedCampaignObj ? ` — Campanha: ${selectedCampaignObj.name}` : ' — Todas as campanhas'}
+          </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
           <PlugZap size={14} />
