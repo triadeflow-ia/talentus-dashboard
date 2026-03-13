@@ -276,12 +276,29 @@ async function fetchAllPipelineOpportunities() {
   return results;
 }
 
+// GHL Custom Field ID → logical name mapping
+const CUSTOM_FIELD_MAP = {
+  '2KaHcDNMZDwsozLFB1lL': 'marca',
+  'qpiSM6URmXbv28u0aFUH': 'produto',
+  'BckPK8Tk8yZvGWeGIBIZ': 'vendedor',
+  'LOY9OJpiGa5WfIgQE02G': 'valor_fechado',
+};
+
 // --- Helper: Get custom field value from opp ---
 function getCustomField(opp, ...keys) {
   const fields = opp.customFields || [];
   for (const f of fields) {
+    // Check by field ID mapping
+    const fieldId = f.id || f.key || '';
+    const mappedName = CUSTOM_FIELD_MAP[fieldId];
+    if (mappedName && keys.some(key => mappedName.includes(key))) {
+      return f.value || f.fieldValue || f.field_value || null;
+    }
+    // Check by key/fieldKey name (fallback)
     const k = (f.key || f.fieldKey || '').toLowerCase();
-    if (keys.some(key => k.includes(key))) return f.value;
+    if (keys.some(key => k.includes(key))) {
+      return f.value || f.fieldValue || f.field_value || null;
+    }
   }
   return null;
 }
