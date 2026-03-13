@@ -261,7 +261,7 @@ function filterBySeller(opps, seller) {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '2.1.0',
+    version: '3.0.0',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development',
     cache: { age: cache.data ? Math.round((Date.now() - cache.timestamp) / 1000) : null },
