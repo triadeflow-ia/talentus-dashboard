@@ -20,9 +20,7 @@
   --color-text-dim: #64748b;
   --color-border: #1e2d50;
   --color-border-light: #2a3d65;
-  /* Tipografia Talentus: Big Shoulders (titulos) + Unbounded (corpo) */
-  --font-family-sans: 'Unbounded', system-ui, sans-serif;
-  --font-family-display: 'Big Shoulders Display', system-ui, sans-serif;
+  --font-family-sans: 'Inter', system-ui, sans-serif;
 }
 
 /* Base */
@@ -36,11 +34,6 @@ body {
   color: var(--color-text);
   margin: 0;
   padding: 0;
-}
-
-/* Display headings use Big Shoulders */
-h1, h2, h3 {
-  font-family: var(--font-family-display);
 }
 
 /* Custom scrollbar */
@@ -171,6 +164,13 @@ h1, h2, h3 {
 .hover-card {
   transition: all 0.3s ease;
   border: 1px solid var(--color-border);
+}
+
+/* Select dropdown options — dark mode fix */
+select option {
+  background: #101B3B;
+  color: #F8F6F7;
+  padding: 6px 8px;
 }
 
 .hover-card:hover {
