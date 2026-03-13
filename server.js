@@ -76,6 +76,22 @@ const SELLER_META = {
   },
 };
 
+// Build reverse lookup: GHL ID → seller name
+const GHL_ID_TO_NAME = {};
+for (const [name, meta] of Object.entries(SELLER_META)) {
+  if (meta.ghlId) {
+    GHL_ID_TO_NAME[meta.ghlId] = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+}
+
+// Resolve GHL user ID to seller name
+function resolveSellerName(rawName) {
+  if (!rawName) return null;
+  // If it's a GHL user ID, resolve to name
+  if (GHL_ID_TO_NAME[rawName]) return GHL_ID_TO_NAME[rawName];
+  return rawName;
+}
+
 // --- Brand/Product definitions ---
 const BRAND_PRODUCTS = {
   'Mateus Cortez': {
@@ -181,7 +197,7 @@ function filterByBrand(opps, brand) {
 function filterBySeller(opps, seller) {
   if (!seller || seller === 'all') return opps;
   return opps.filter(opp => {
-    const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || '';
+    const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || '';
     return vendedor.toLowerCase().includes(seller.toLowerCase());
   });
 }
@@ -345,7 +361,7 @@ app.get('/api/sellers', async (req, res) => {
     const sellerMap = {};
 
     for (const opp of allOpps) {
-      const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || 'Nao atribuido';
+      const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || 'Nao atribuido';
 
       if (!sellerMap[vendedor]) {
         sellerMap[vendedor] = {
@@ -639,7 +655,7 @@ app.get('/api/sellers-list', async (req, res) => {
 
     const sellerNames = new Set();
     for (const opp of allOpps) {
-      const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo;
+      const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo);
       if (vendedor && vendedor !== 'Nao atribuido') sellerNames.add(vendedor);
     }
 
@@ -763,7 +779,7 @@ app.get('/api/distribution', async (req, res) => {
     // By seller
     const bySeller = {};
     for (const opp of allOpps) {
-      const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || 'Nao atribuido';
+      const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || 'Nao atribuido';
       if (!bySeller[vendedor]) bySeller[vendedor] = { name: vendedor, count: 0, revenue: 0, won: 0 };
       bySeller[vendedor].count++;
       if (opp.status === 'won') {
