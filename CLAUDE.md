@@ -56,7 +56,7 @@ GET /api/distribution?brand=&seller=   — Distribuicao (status, produto, marca,
 - **CybNutri** (slug: cyb, cor: #10b981): Low Ticket CYB, Formacao Nutri Expert, Escola Nutri Expert, Profissional Mentory
 
 ## Equipe (Vendedores)
-- Lucas Rodrigues, Gilcilene Lima, Kyonara Gomes (vendedores)
+- Lucas Rodrigues, Gilcilene Lima, Karla Yonara (vendedores)
 - Mateus Cortez (CEO), Davi (Sucesso do Cliente)
 
 ## Proximos Passos

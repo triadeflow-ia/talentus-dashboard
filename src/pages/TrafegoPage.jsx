@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -6,14 +6,15 @@ import {
 } from 'recharts';
 import {
   DollarSign, Eye, MousePointerClick, Users, Target, Megaphone,
-  PlugZap, TrendingUp, Layers, ChevronRight, ArrowDown, BarChart3,
-  Phone, ShoppingCart, Receipt, Wallet,
+  PlugZap, TrendingUp, Layers, ArrowDown, BarChart3,
+  ShoppingCart, Receipt, Wallet, Filter, Image,
 } from 'lucide-react';
 import { useFilter } from '../lib/FilterContext';
 import { api } from '../lib/api';
 import ChartCard from '../components/ChartCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
 
+// --- Formatters ---
 function fmt(v) {
   if (v == null || isNaN(v)) return 'R$ 0,00';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -33,6 +34,7 @@ function fmtRate(num, den) {
   return `${((num / den) * 100).toFixed(1)}%`;
 }
 
+// --- Reusable Components ---
 function KpiCard({ title, value, sub, icon: Icon, color = 'primary' }) {
   const cls = {
     primary: 'text-primary-light bg-primary/10',
@@ -43,7 +45,6 @@ function KpiCard({ title, value, sub, icon: Icon, color = 'primary' }) {
     green: 'text-[#10b981] bg-[#10b981]/10',
     purple: 'text-[#a78bfa] bg-[#a78bfa]/10',
   }[color] || 'text-primary-light bg-primary/10';
-
   return (
     <div className="bg-bg-card rounded-xl border border-border p-4 hover-card card-scanline">
       <div className="flex items-center justify-between mb-2">
@@ -103,38 +104,80 @@ function FunnelRow({ label, value, rate, color }) {
   );
 }
 
+function FilterSelect({ icon: Icon, label, value, onChange, options, disabled }) {
+  return (
+    <div className={`flex items-center gap-1.5 bg-bg-deep border border-border-light rounded-lg px-2.5 py-1.5 ${disabled ? 'opacity-50' : ''}`}>
+      <Icon size={13} className="text-accent shrink-0" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="bg-bg-deep text-[11px] font-medium text-text border-none outline-none cursor-pointer pr-4 max-w-[220px] truncate disabled:cursor-not-allowed"
+      >
+        <option value="all">{label}</option>
+        {options.map(o => (
+          <option key={o.id} value={o.id} title={o.name}>{o.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// --- Main Page ---
 export default function TrafegoPage() {
   const { period } = useFilter();
+
+  // Cascading filter state
   const [selectedAccount, setSelectedAccount] = useState('all');
   const [selectedCampaign, setSelectedCampaign] = useState('all');
-  const [drillLevel, setDrillLevel] = useState('campaigns'); // campaigns | adsets | ads
+  const [selectedAdset, setSelectedAdset] = useState('all');
 
+  // Reset children when parent changes
+  useEffect(() => { setSelectedCampaign('all'); setSelectedAdset('all'); }, [selectedAccount]);
+  useEffect(() => { setSelectedAdset('all'); }, [selectedCampaign]);
+
+  // --- Data fetching ---
   const { data: statusData } = useQuery({ queryKey: ['meta-status'], queryFn: api.metaStatus, staleTime: 300_000 });
   const { data: accountsData } = useQuery({ queryKey: ['meta-accounts'], queryFn: api.metaAccounts, enabled: !!statusData?.connected, staleTime: 300_000 });
 
   const accountId = selectedAccount !== 'all' ? selectedAccount : (accountsData?.accounts?.[0]?.id || null);
 
+  // KPIs (account level)
   const { data: insightsData, isLoading } = useQuery({
-    queryKey: ['meta-insights-trafego', period, accountId],
+    queryKey: ['trafego-insights', period, accountId],
     queryFn: () => api.metaInsights(period, accountId),
     enabled: !!accountId,
   });
+
+  // Campaigns (always fetch for filter dropdown)
   const { data: campaignsData } = useQuery({
-    queryKey: ['meta-campaigns-trafego', period, accountId],
+    queryKey: ['trafego-campaigns', period, accountId],
     queryFn: () => api.metaCampaigns(period, accountId),
     enabled: !!accountId,
   });
+
+  // Ad Sets (fetch when account available, filter by campaign if selected)
   const { data: adsetsData } = useQuery({
-    queryKey: ['meta-adsets-trafego', period, accountId, selectedCampaign],
+    queryKey: ['trafego-adsets', period, accountId, selectedCampaign],
     queryFn: () => api.metaAdsets(period, accountId, selectedCampaign !== 'all' ? selectedCampaign : undefined),
-    enabled: !!accountId && drillLevel === 'adsets',
+    enabled: !!accountId,
   });
+
+  // Ads (fetch when adset or campaign selected)
+  const { data: adsData } = useQuery({
+    queryKey: ['trafego-ads', period, accountId, selectedAdset],
+    queryFn: () => api.metaAds(period, accountId, selectedAdset !== 'all' ? selectedAdset : undefined),
+    enabled: !!accountId && (selectedAdset !== 'all' || selectedCampaign !== 'all'),
+  });
+
+  // Timeline (filtered by campaign if selected)
   const { data: timelineData } = useQuery({
-    queryKey: ['meta-timeline-trafego', period, accountId, selectedCampaign],
+    queryKey: ['trafego-timeline', period, accountId, selectedCampaign],
     queryFn: () => api.metaTimeline(period, accountId, selectedCampaign !== 'all' ? selectedCampaign : undefined),
     enabled: !!accountId,
   });
 
+  // --- Not connected ---
   if (!statusData?.connected) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -149,53 +192,102 @@ export default function TrafegoPage() {
 
   if (isLoading) return <SkeletonPage cards={10} charts={2} />;
 
+  // --- Data ---
   const accounts = accountsData?.accounts || [];
   const d = insightsData?.data || {};
   const campaigns = campaignsData?.campaigns || [];
   const adsets = adsetsData?.adsets || [];
+  const ads = adsData?.ads || [];
   const timeline = (timelineData?.timeline || []).map(t => ({
     ...t,
     label: new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
   }));
 
-  // Calculated rates
+  // Rates
   const lpViewRate = d.linkClicks > 0 ? (d.landingPageViews / d.linkClicks) * 100 : 0;
   const lpToLeadRate = d.landingPageViews > 0 ? (d.leads / d.landingPageViews) * 100 : 0;
   const siteConversion = d.clicks > 0 ? (d.leads / d.clicks) * 100 : 0;
 
-  const totalSpend = campaigns.reduce((s, c) => s + (c.insights?.spend || 0), 0);
+  // Determine which level to show in the table
+  let tableLevel = 'campaigns';
+  let tableData = campaigns;
+  let tableTitle = 'Campanhas';
+  if (selectedAdset !== 'all') {
+    tableLevel = 'ads';
+    tableData = ads;
+    tableTitle = 'Anuncios';
+  } else if (selectedCampaign !== 'all') {
+    tableLevel = 'adsets';
+    tableData = adsets;
+    tableTitle = 'Conjuntos de Anuncios';
+  }
+
+  const totalSpend = tableData.reduce((s, c) => s + (c.insights?.spend || 0), 0);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header + Account Filter */}
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-text">Trafego & Criativos</h2>
           <p className="text-sm text-text-muted mt-1">Meta Ads — Funil completo — ultimos {period} dias</p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Account selector */}
-          <div className="flex items-center gap-1.5 bg-bg-deep border border-border-light rounded-lg px-2.5 py-1.5">
-            <Wallet size={13} className="text-accent" />
-            <select
-              value={selectedAccount}
-              onChange={(e) => { setSelectedAccount(e.target.value); setSelectedCampaign('all'); setDrillLevel('campaigns'); }}
-              className="bg-bg-deep text-[11px] font-medium text-text border-none outline-none cursor-pointer pr-5 max-w-[200px]"
-            >
-              <option value="all">Primeira conta</option>
-              {accounts.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
-            <PlugZap size={14} />
-            <span className="text-xs font-medium">Conectado</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20">
+          <PlugZap size={14} />
+          <span className="text-xs font-medium">Conectado</span>
+        </div>
+      </div>
+
+      {/* ========== FILTROS CASCATA ========== */}
+      <div className="bg-bg-card rounded-xl border border-border p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Filter size={14} className="text-text-dim" />
+          <span className="text-xs font-bold text-text-dim uppercase tracking-wider">Filtros</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Conta */}
+          <FilterSelect
+            icon={Wallet}
+            label="Todas as contas"
+            value={selectedAccount}
+            onChange={setSelectedAccount}
+            options={accounts.map(a => ({ id: a.id, name: a.name }))}
+          />
+
+          {/* Campanha */}
+          <FilterSelect
+            icon={Megaphone}
+            label="Todas as campanhas"
+            value={selectedCampaign}
+            onChange={setSelectedCampaign}
+            options={campaigns.map(c => ({ id: c.id, name: c.name }))}
+            disabled={campaigns.length === 0}
+          />
+
+          {/* Conjunto de Anuncios */}
+          <FilterSelect
+            icon={Layers}
+            label="Todos os conjuntos"
+            value={selectedAdset}
+            onChange={setSelectedAdset}
+            options={adsets.map(a => ({ id: a.id, name: a.name }))}
+            disabled={adsets.length === 0}
+          />
+
+          {/* Nivel atual */}
+          <div className="ml-auto flex items-center gap-1.5 text-[10px] text-text-dim">
+            <span className={selectedAccount !== 'all' ? 'text-accent font-bold' : ''}>Conta</span>
+            <span>›</span>
+            <span className={selectedCampaign !== 'all' ? 'text-accent font-bold' : ''}>Campanha</span>
+            <span>›</span>
+            <span className={selectedAdset !== 'all' ? 'text-accent font-bold' : ''}>Conjunto</span>
+            <span>›</span>
+            <span className="text-text-dim">Anuncio</span>
           </div>
         </div>
       </div>
 
-      {/* === TOPO DO FUNIL (Meta Ads) === */}
+      {/* ========== TOPO DO FUNIL ========== */}
       <div>
         <h3 className="text-xs font-bold text-text-dim uppercase tracking-wider mb-3 flex items-center gap-2">
           <TrendingUp size={14} /> Topo do Funil — Meta Ads
@@ -209,7 +301,7 @@ export default function TrafegoPage() {
         </div>
       </div>
 
-      {/* Landing Page + Lead */}
+      {/* ========== CONVERSAO LP → LEAD ========== */}
       <div>
         <h3 className="text-xs font-bold text-text-dim uppercase tracking-wider mb-3 flex items-center gap-2">
           <Layers size={14} /> Conversao — Landing Page → Lead
@@ -223,10 +315,10 @@ export default function TrafegoPage() {
         </div>
       </div>
 
-      {/* Bottom funnel — CRM (from GHL data) */}
+      {/* ========== FUNDO DO FUNIL ========== */}
       <div>
         <h3 className="text-xs font-bold text-text-dim uppercase tracking-wider mb-3 flex items-center gap-2">
-          <ShoppingCart size={14} /> Fundo do Funil — Vendas (CRM)
+          <ShoppingCart size={14} /> Fundo do Funil — Vendas
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <KpiCard title="Compras" value={fmtN(d.purchases)} icon={ShoppingCart} color="green" />
@@ -237,7 +329,7 @@ export default function TrafegoPage() {
         </div>
       </div>
 
-      {/* Funnel Visualization */}
+      {/* ========== FUNIL + TIMELINE ========== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <ChartCard title="Funil de Conversao" subtitle="Do clique a compra" className="lg:col-span-1">
           <div className="space-y-3 py-2">
@@ -249,7 +341,6 @@ export default function TrafegoPage() {
           </div>
         </ChartCard>
 
-        {/* Timeline charts */}
         <ChartCard title="Investimento Diario" subtitle="Gasto ao longo do periodo" className="lg:col-span-2">
           {timeline.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
@@ -290,43 +381,16 @@ export default function TrafegoPage() {
         ) : <div className="flex items-center justify-center h-[260px] text-text-dim text-sm">Sem dados</div>}
       </ChartCard>
 
-      {/* Campaign filter */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-bg-deep border border-border-light rounded-lg px-2.5 py-1.5">
-          <Megaphone size={13} className="text-accent" />
-          <select
-            value={selectedCampaign}
-            onChange={(e) => { setSelectedCampaign(e.target.value); setDrillLevel(e.target.value !== 'all' ? 'adsets' : 'campaigns'); }}
-            className="bg-bg-deep text-[11px] font-medium text-text border-none outline-none cursor-pointer pr-5 max-w-[300px]"
-          >
-            <option value="all">Todas as campanhas</option>
-            {campaigns.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-1 text-xs text-text-dim">
-          <button onClick={() => { setDrillLevel('campaigns'); setSelectedCampaign('all'); }} className="hover:text-text">Campanhas</button>
-          {drillLevel !== 'campaigns' && (
-            <>
-              <ChevronRight size={12} />
-              <button onClick={() => setDrillLevel('adsets')} className="hover:text-text">Conjuntos</button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Campaigns / AdSets Table */}
+      {/* ========== TABELA DRILL-DOWN ========== */}
       <ChartCard
-        title={drillLevel === 'campaigns' ? 'Campanhas' : 'Conjuntos de Anuncios'}
-        subtitle={drillLevel === 'campaigns' ? `${campaigns.length} campanhas` : `${adsets.length} conjuntos`}
+        title={tableTitle}
+        subtitle={`${tableData.length} ${tableTitle.toLowerCase()} no periodo`}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
+                {tableLevel === 'ads' && <th className="w-10 py-3 px-2"></th>}
                 <th className="text-left py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Nome</th>
                 <th className="text-center py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Status</th>
                 <th className="text-right py-3 px-2 text-xs text-text-dim font-medium uppercase tracking-wider">Invest.</th>
@@ -339,19 +403,28 @@ export default function TrafegoPage() {
               </tr>
             </thead>
             <tbody>
-              {(drillLevel === 'campaigns' ? campaigns : adsets).map((item) => {
+              {tableData.map((item) => {
                 const ins = item.insights || {};
                 const spPct = totalSpend > 0 ? ((ins.spend || 0) / totalSpend) * 100 : 0;
                 return (
                   <tr key={item.id}
-                    className="border-b border-border/50 hover:bg-bg-hover transition-colors cursor-pointer"
+                    className={`border-b border-border/50 hover:bg-bg-hover transition-colors ${tableLevel !== 'ads' ? 'cursor-pointer' : ''}`}
                     onClick={() => {
-                      if (drillLevel === 'campaigns') {
-                        setSelectedCampaign(item.id);
-                        setDrillLevel('adsets');
-                      }
+                      if (tableLevel === 'campaigns') setSelectedCampaign(item.id);
+                      else if (tableLevel === 'adsets') setSelectedAdset(item.id);
                     }}
                   >
+                    {tableLevel === 'ads' && (
+                      <td className="py-2 px-2">
+                        {item.thumbnail ? (
+                          <img src={item.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded bg-bg-hover flex items-center justify-center">
+                            <Image size={12} className="text-text-dim" />
+                          </div>
+                        )}
+                      </td>
+                    )}
                     <td className="py-3 px-2">
                       <p className="font-medium text-text truncate max-w-[250px]">{item.name}</p>
                     </td>
@@ -359,7 +432,7 @@ export default function TrafegoPage() {
                     <td className="py-3 px-2 text-right">
                       <span className="font-semibold text-text">{fmt(ins.spend)}</span>
                       <div className="h-1 w-full bg-bg-hover rounded-full mt-1 overflow-hidden">
-                        <div className="h-full bg-danger rounded-full" style={{ width: `${spPct}%` }} />
+                        <div className="h-full bg-danger rounded-full" style={{ width: `${Math.min(spPct, 100)}%` }} />
                       </div>
                     </td>
                     <td className="py-3 px-2 text-right text-text-muted">{fmtN(ins.impressions)}</td>
@@ -371,8 +444,10 @@ export default function TrafegoPage() {
                   </tr>
                 );
               })}
-              {(drillLevel === 'campaigns' ? campaigns : adsets).length === 0 && (
-                <tr><td colSpan={9} className="text-center py-8 text-text-dim text-sm">Nenhum item encontrado</td></tr>
+              {tableData.length === 0 && (
+                <tr><td colSpan={tableLevel === 'ads' ? 10 : 9} className="text-center py-8 text-text-dim text-sm">
+                  Nenhum item encontrado no periodo
+                </td></tr>
               )}
             </tbody>
           </table>

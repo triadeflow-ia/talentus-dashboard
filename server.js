@@ -42,7 +42,7 @@ const PIPELINE_NAMES = {
 
 // --- Seller metadata (photos, team info) ---
 // GHL User IDs: Lucas=9AXuakmsPmncaaojIyGw, Gilcilene=2Z0eH6IjgWDqUw5b4fqS,
-// Kyonara=CfeKqpQX6eWKCVVwyRsQ, Mateus=77uDX774vmKxyMxEhfCR, Jessica=W4iYpPWuyc1lVnfyIKa5
+// Karla Yonara=CfeKqpQX6eWKCVVwyRsQ, Mateus=77uDX774vmKxyMxEhfCR, Jessica=W4iYpPWuyc1lVnfyIKa5
 const SELLER_META = {
   'lucas rodrigues': {
     photo: '/photos/lucas-rodrigues.jpg',
@@ -56,8 +56,8 @@ const SELLER_META = {
     email: 'gilcilenelimaadm25@gmail.com',
     ghlId: '2Z0eH6IjgWDqUw5b4fqS',
   },
-  'kyonara gomes': {
-    photo: '/photos/kyonara-gomes.jpg',
+  'karla yonara': {
+    photo: '/photos/karla-yonara.jpg',
     role: 'Vendedora',
     email: 'kyonaragomes@gmail.com',
     ghlId: 'CfeKqpQX6eWKCVVwyRsQ',
