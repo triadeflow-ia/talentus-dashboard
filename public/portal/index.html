@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal CRM | Talentus Digital | Triadeflow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #8b7230;
+      --gold-accent: #a68a3e;
+      --gold-bg: rgba(139,114,48,0.08);
+      --gold-border: rgba(139,114,48,0.25);
+      --bg: #f0ede6;
+      --bg-alt: #e6e2d9;
+      --bg-card: #faf9f5;
+      --bg-dark: #1c1b18;
+      --bg-dark-mid: #2a2925;
+      --text: #1c1b18;
+      --text-mid: #3d3b35;
+      --text-dim: #6b685e;
+      --text-muted: #95928a;
+      --border: #ccc9be;
+      --border-strong: #b5b1a5;
+      --done: #2d7a3a;
+      --done-bg: rgba(45,122,58,0.1);
+      --done-strong: #1e6b2b;
+      --progress: #2656b0;
+      --progress-bg: rgba(38,86,176,0.08);
+      --planned: #95928a;
+      --planned-bg: rgba(149,146,138,0.12);
+      --risk: #c05a1a;
+      --lost: #b82020;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+    /* ANIMATIONS */
+    @keyframes fadeUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    @keyframes scaleIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+    @keyframes slideRight{from{opacity:0;transform:translateX(-20px);}to{opacity:1;transform:translateX(0);}}
+    @keyframes countUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .anim{opacity:0;transition:none;}
+    .anim.visible{animation:fadeUp 0.6s ease forwards;}
+    .anim-delay-1{animation-delay:0.1s !important;}
+    .anim-delay-2{animation-delay:0.2s !important;}
+    .anim-delay-3{animation-delay:0.3s !important;}
+    .anim-delay-4{animation-delay:0.4s !important;}
+    .anim-delay-5{animation-delay:0.5s !important;}
+    .anim-delay-6{animation-delay:0.6s !important;}
+    .anim-scale.visible{animation:scaleIn 0.5s ease forwards;}
+    .anim-slide.visible{animation:slideRight 0.5s ease forwards;}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;background:var(--bg-dark);display:flex;align-items:center;justify-content:space-between;padding:0 36px;box-shadow:0 2px 20px rgba(0,0,0,0.15);transition:height 0.3s ease,box-shadow 0.3s ease;}
+    .nav-left{display:flex;align-items:center;gap:12px;}
+    .nav-left .brand{font-weight:800;font-size:13px;color:#fff;letter-spacing:1px;text-transform:uppercase;}
+    .nav-left .sep{color:rgba(255,255,255,0.2);font-size:18px;}
+    .nav-left .client{font-weight:800;font-size:13px;color:var(--gold-accent);letter-spacing:0.5px;}
+    .nav-links{display:flex;gap:2px;}
+    .nav-links a{color:rgba(255,255,255,0.55);text-decoration:none;font-size:12px;font-weight:600;padding:8px 14px;border-radius:6px;transition:all 0.15s;letter-spacing:0.2px;}
+    .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.08);}
+    .nav-cta{background:var(--gold-accent);color:#fff;font-size:12px;font-weight:700;padding:8px 20px;border-radius:6px;text-decoration:none;transition:all 0.15s;letter-spacing:0.3px;}
+    .nav-cta:hover{background:var(--gold);}
+
+    /* HERO */
+    .hero{padding:112px 36px 72px;text-align:center;background:var(--bg-dark);color:#fff;position:relative;}
+    .hero::after{display:none;}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:24px;margin-bottom:28px;background:rgba(166,138,62,0.12);border:1.5px solid rgba(166,138,62,0.3);font-size:11px;font-weight:700;color:var(--gold-accent);letter-spacing:1px;text-transform:uppercase;}
+    .hero-badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--gold-accent);animation:pulse 1.5s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(166,138,62,0.4);}50%{opacity:0.6;box-shadow:0 0 0 6px rgba(166,138,62,0);}}
+    .hero h1{font-size:48px;font-weight:900;line-height:1.1;margin-bottom:20px;letter-spacing:-1px;}
+    .hero .gold{color:var(--gold-accent);}
+    .hero .subtitle{font-size:17px;color:rgba(255,255,255,0.5);font-weight:500;margin-bottom:14px;letter-spacing:0.3px;}
+    .hero .living-desc{font-size:14px;color:rgba(255,255,255,0.35);max-width:600px;margin:0 auto 52px;line-height:1.9;}
+    .hero .living-desc strong{color:rgba(255,255,255,0.75);font-weight:700;}
+
+    /* PROGRESS HUD */
+    .progress-hud{display:grid;grid-template-columns:180px 1fr;gap:48px;max-width:780px;margin:0 auto;text-align:left;position:relative;z-index:1;}
+    .prog-circle-wrap{display:flex;align-items:center;justify-content:center;}
+    .prog-circle{width:168px;height:168px;position:relative;}
+    .prog-circle svg{width:168px;height:168px;transform:rotate(-90deg);}
+    .prog-circle .bg{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:10;}
+    .prog-circle .fill{fill:none;stroke:var(--gold-accent);stroke-width:10;stroke-linecap:round;}
+    .prog-circle .center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+    .prog-circle .pct{font-size:38px;font-weight:900;color:#fff;display:block;letter-spacing:-1px;}
+    .prog-circle .pct-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+    .prog-phases{display:flex;flex-direction:column;gap:10px;justify-content:center;}
+    .ph-row{display:flex;align-items:center;gap:12px;}
+    .ph-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid transparent;}
+    .ph-dot.done{background:#4ade80;border-color:#22c55e;}
+    .ph-dot.progress{background:#60a5fa;border-color:#3b82f6;}
+    .ph-dot.planned{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);}
+    .ph-info{flex:1;}
+    .ph-name{font-size:13px;font-weight:700;color:#fff;}
+    .ph-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:4px;overflow:hidden;}
+    .ph-bar-fill{height:100%;border-radius:3px;}
+    .ph-bar-fill.done{background:#4ade80;}
+    .ph-bar-fill.planned{background:rgba(255,255,255,0.08);}
+    .ph-pct{font-size:12px;font-weight:800;color:rgba(255,255,255,0.35);min-width:36px;text-align:right;}
+
+    /* STATS */
+    .stats-row{display:flex;justify-content:center;gap:0;background:var(--bg-card);border:2px solid var(--border);border-radius:16px;margin:-36px 36px 0;position:relative;z-index:2;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+    .stat{flex:1;text-align:center;padding:28px 16px;border-right:1px solid var(--border);}
+    .stat:last-child{border-right:none;}
+    .stat-n{font-size:28px;font-weight:900;color:var(--text);letter-spacing:-0.5px;}
+    .stat-l{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:4px;}
+
+    /* SECTIONS */
+    section{padding:80px 36px;}
+    section.alt{background:var(--bg-alt);}
+    .container{max-width:1060px;margin:0 auto;}
+    .sh{text-align:center;margin-bottom:48px;}
+    .sh h2{font-size:28px;font-weight:900;margin-bottom:8px;color:var(--text);letter-spacing:-0.5px;}
+    .sh p{font-size:14px;color:var(--text-dim);font-weight:500;}
+    .sh-badge{display:inline-block;padding:4px 14px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;border:1.5px solid;}
+    .sh-badge.done{background:var(--done-bg);color:var(--done);border-color:rgba(45,122,58,0.2);}
+    .sh-badge.planned{background:var(--planned-bg);color:var(--text-dim);border-color:var(--border);}
+
+    /* NEXT ACTION */
+    .next-action{max-width:1060px;margin:40px auto 0;padding:0 36px;}
+    .na-card{background:var(--bg-card);border:2px solid var(--gold-border);border-left:5px solid var(--gold-accent);border-radius:12px;padding:24px 28px;display:flex;align-items:center;gap:24px;box-shadow:0 4px 16px rgba(0,0,0,0.04);}
+    .na-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);font-weight:800;}
+    .na-title{font-size:17px;font-weight:800;margin-top:4px;color:var(--text);}
+    .na-desc{font-size:13px;color:var(--text-dim);margin-top:4px;font-weight:500;}
+    .na-date{padding:8px 18px;border-radius:8px;background:var(--gold-bg);border:1.5px solid var(--gold-border);font-size:12px;font-weight:800;color:var(--gold);white-space:nowrap;margin-left:auto;letter-spacing:0.3px;}
+
+    /* DELIVERY */
+    .del-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+    .del-card{background:var(--bg-card);border:2px solid var(--border);border-radius:14px;padding:28px;transition:all 0.15s;}
+    .del-card:hover{border-color:var(--border-strong);box-shadow:0 4px 20px rgba(0,0,0,0.06);transform:translateY(-2px);}
+    .del-card h3{font-size:16px;font-weight:800;margin-bottom:8px;color:var(--text);}
+    .del-card p{font-size:13px;color:var(--text-dim);line-height:1.7;font-weight:500;}
+
+    /* PIPELINES */
+    .brand-sw-wrap{text-align:center;margin-bottom:32px;}
+    .brand-sw{display:inline-flex;gap:0;background:var(--bg-card);border:2px solid var(--border);border-radius:10px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+    .brand-btn{padding:10px 32px;border-radius:7px;font-size:13px;font-weight:800;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:all 0.15s;letter-spacing:0.3px;}
+    .brand-btn.active{background:var(--bg-dark);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+    .brand-btn:hover{color:var(--text);}
+    .brand-content{display:none;}
+    .brand-content.active{display:block;}
+
+    .funnel-card{background:var(--bg-card);border:2px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:14px;transition:all 0.15s;}
+    .funnel-card:hover{border-color:var(--border-strong);box-shadow:0 4px 16px rgba(0,0,0,0.05);}
+    .funnel-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+    .funnel-name{font-size:17px;font-weight:800;color:var(--text);}
+    .funnel-tag{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;background:var(--gold-bg);color:var(--gold);border:1.5px solid var(--gold-border);}
+
+    .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-bottom:16px;}
+    .flow-stage{padding:10px 20px;font-size:12px;font-weight:700;color:var(--text-mid);background:var(--bg);border:2px solid var(--border);white-space:nowrap;letter-spacing:0.2px;}
+    .flow-stage:first-child{border-radius:8px 0 0 8px;}
+    .flow-stage:last-child{border-radius:0 8px 8px 0;}
+    .flow-stage+.flow-stage{border-left:none;}
+    .flow-stage.entry{background:rgba(45,122,58,0.08);border-color:rgba(45,122,58,0.3);color:var(--done-strong);font-weight:800;}
+    .flow-stage.won{background:rgba(45,122,58,0.1);border-color:rgba(45,122,58,0.35);color:var(--done-strong);font-weight:800;}
+    .flow-stage.lost{background:rgba(184,32,32,0.06);border-color:rgba(184,32,32,0.25);color:var(--lost);font-weight:800;}
+    .flow-stage.risk{background:rgba(192,90,26,0.06);border-color:rgba(192,90,26,0.25);color:var(--risk);font-weight:800;}
+    .flow-stage.special{background:var(--gold-bg);border-color:var(--gold-border);color:var(--gold);font-weight:800;}
+    .funnel-specs{display:flex;gap:20px;flex-wrap:wrap;padding-top:14px;border-top:2px solid var(--bg-alt);}
+    .funnel-spec{font-size:12px;color:var(--text-dim);font-weight:500;}
+    .funnel-spec strong{color:var(--text);font-weight:800;}
+
+    /* LEAD SCORE */
+    .score-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .score-card{background:var(--bg-card);border:2px solid var(--border);border-radius:14px;padding:28px;}
+    .score-card h3{font-size:16px;font-weight:800;margin-bottom:18px;color:var(--text);}
+    .sc-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:2px solid var(--bg-alt);}
+    .sc-row:last-child{border-bottom:none;}
+    .sc-badge{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:800;min-width:80px;text-align:center;letter-spacing:0.3px;border:1.5px solid;}
+    .sc-badge.ouro{background:rgba(161,98,7,0.08);color:#92400e;border-color:rgba(161,98,7,0.2);}
+    .sc-badge.prata{background:rgba(100,116,139,0.08);color:#475569;border-color:rgba(100,116,139,0.2);}
+    .sc-badge.bronze{background:rgba(180,83,9,0.08);color:#9a3412;border-color:rgba(180,83,9,0.2);}
+    .sc-badge.alerta{background:rgba(220,38,38,0.06);color:#b91c1c;border-color:rgba(220,38,38,0.15);}
+    .sc-badge.churn{background:rgba(127,29,29,0.08);color:#7f1d1d;border-color:rgba(127,29,29,0.15);}
+    .sc-pts{font-size:13px;font-weight:800;color:var(--text);}
+    .sc-desc{font-size:11px;color:var(--text-muted);font-weight:500;}
+    .tag-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:5px;}
+    .tag-name{font-size:11px;font-weight:600;color:var(--text-mid);font-family:'SF Mono','Fira Code','Consolas',monospace;letter-spacing:0.3px;}
+    .tag-pts{font-size:12px;font-weight:900;}
+    .tag-pos{color:var(--done);}
+    .tag-neg{color:var(--lost);}
+
+    /* PRODUCTS */
+    .prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px;}
+    .prod-card{background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:20px;transition:all 0.15s;}
+    .prod-card:hover{border-color:var(--border-strong);}
+    .prod-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px;}
+    .prod-price{font-size:12px;color:var(--gold);font-weight:800;margin-bottom:10px;letter-spacing:0.2px;}
+    .prod-sla{font-size:11px;color:var(--text-muted);line-height:1.8;font-weight:500;}
+    .prod-sla span{color:var(--text-mid);font-weight:700;}
+    .prod-section-label{font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px;letter-spacing:0.5px;text-transform:uppercase;padding-bottom:8px;border-bottom:2px solid var(--border);}
+
+    /* TEAM */
+    .team-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+    .team-card{background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:24px;text-align:center;}
+    .team-av{width:52px;height:52px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff;background:var(--bg-dark);border:3px solid var(--border);}
+    .team-n{font-size:14px;font-weight:800;color:var(--text);}
+    .team-r{font-size:11px;color:var(--text-dim);font-weight:600;margin-top:2px;}
+
+    /* WORKFLOWS */
+    .wf-wrap{overflow-x:auto;border:2px solid var(--border);border-radius:14px;background:var(--bg-card);}
+    .wf-table{width:100%;border-collapse:collapse;}
+    .wf-table th{background:var(--bg-dark);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:rgba(255,255,255,0.8);padding:14px 18px;text-align:left;}
+    .wf-table td{padding:12px 18px;font-size:13px;color:var(--text-mid);border-bottom:1px solid var(--border);font-weight:500;}
+    .wf-table tr:hover{background:var(--bg);}
+    .wf-table td:first-child{font-weight:800;color:var(--text);}
+    .wf-badge{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--planned-bg);color:var(--text-dim);border:1px solid var(--border);letter-spacing:0.3px;}
+
+    /* TIMELINE */
+    .tl-container{max-width:820px;margin:0 auto;position:relative;}
+    .tl-container::before{content:'';position:absolute;left:23px;top:0;bottom:0;width:3px;background:var(--border);border-radius:2px;}
+    .tl-item{display:flex;gap:24px;margin-bottom:28px;position:relative;}
+    .tl-dot{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0;z-index:1;border:3px solid;}
+    .tl-dot.done{background:var(--done-bg);color:var(--done);border-color:rgba(45,122,58,0.3);}
+    .tl-dot.planned{background:var(--bg-card);color:var(--text-muted);border-color:var(--border);}
+    .tl-card{flex:1;background:var(--bg-card);border:2px solid var(--border);border-radius:14px;padding:24px;transition:all 0.15s;}
+    .tl-card:hover{border-color:var(--border-strong);box-shadow:0 4px 16px rgba(0,0,0,0.04);}
+    .tl-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .tl-card h3{font-size:16px;font-weight:800;color:var(--text);}
+    .tl-status{padding:4px 12px;border-radius:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;border:1.5px solid;}
+    .tl-status.done{background:var(--done-bg);color:var(--done);border-color:rgba(45,122,58,0.2);}
+    .tl-status.planned{background:var(--planned-bg);color:var(--text-dim);border-color:var(--border);}
+    .tl-date{font-size:12px;color:var(--text-muted);margin-bottom:12px;font-weight:600;}
+    .tl-tags{display:flex;flex-wrap:wrap;gap:6px;}
+    .tl-tag{padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);color:var(--text-mid);}
+
+    /* SUPPORT (dark) */
+    .support-section{background:var(--bg-dark);color:#fff;padding:80px 36px;}
+    .support-inner{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:56px;}
+    .support-left h2{font-size:28px;font-weight:900;color:#fff;margin-bottom:10px;}
+    .support-left>p{font-size:14px;color:rgba(255,255,255,0.55);margin-bottom:28px;line-height:1.9;font-weight:500;}
+    .support-left>p strong{color:rgba(255,255,255,0.9);font-weight:800;}
+    .smart-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:8px;background:rgba(166,138,62,0.12);border:1.5px solid rgba(166,138,62,0.25);font-size:11px;font-weight:800;color:var(--gold-accent);margin-bottom:18px;letter-spacing:0.5px;text-transform:uppercase;}
+    .support-cats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .sup-cat{background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;transition:all 0.15s;}
+    .sup-cat:hover{border-color:rgba(255,255,255,0.2);}
+    .sup-cat-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;}
+    .sup-cat-desc{font-size:11px;color:rgba(255,255,255,0.4);font-weight:500;}
+    .support-form{background:var(--bg-card);border-radius:14px;padding:32px;color:var(--text);box-shadow:0 8px 30px rgba(0,0,0,0.2);}
+    .support-form h3{font-size:18px;font-weight:900;margin-bottom:6px;color:var(--text);}
+    .support-form .form-desc{font-size:12px;color:var(--text-dim);margin-bottom:24px;line-height:1.8;font-weight:500;padding-bottom:16px;border-bottom:2px solid var(--bg-alt);}
+    .fg{margin-bottom:16px;}
+    .fg label{display:block;font-size:11px;font-weight:800;color:var(--text-mid);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.3px;}
+    .fg input,.fg select,.fg textarea{width:100%;padding:11px 14px;border-radius:8px;background:var(--bg);border:2px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:500;}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--gold-accent);}
+    .fg textarea{min-height:90px;resize:vertical;}
+    .form-btn{width:100%;padding:14px;border-radius:10px;background:var(--bg-dark);color:#fff;font-weight:800;font-size:14px;border:none;cursor:pointer;transition:all 0.15s;letter-spacing:0.3px;}
+    .form-btn:hover{background:var(--bg-dark-mid);}
+
+    /* CONTACT */
+    .contact-row{display:flex;gap:16px;justify-content:center;}
+    .contact-card{display:flex;align-items:center;gap:14px;padding:16px 28px;background:var(--bg-card);border:2px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);transition:all 0.15s;}
+    .contact-card:hover{border-color:var(--border-strong);box-shadow:0 4px 12px rgba(0,0,0,0.04);}
+    .cc-title{font-size:14px;font-weight:800;}
+    .cc-sub{font-size:12px;color:var(--text-dim);font-weight:500;}
+
+    /* TOOLS SECTION (Miro + Notion) */
+    .tools-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:32px;}
+    .tool-card{background:var(--bg-card);border:2px solid var(--border);border-radius:14px;padding:28px;text-decoration:none;color:var(--text);transition:all 0.15s;display:flex;flex-direction:column;gap:12px;}
+    .tool-card:hover{border-color:var(--gold-accent);box-shadow:0 4px 16px rgba(0,0,0,0.06);transform:translateY(-2px);}
+    .tool-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;}
+    .tool-icon.miro{background:#ffe066;color:#050038;}
+    .tool-icon.notion{background:#1c1b18;color:#fff;}
+    .tool-name{font-size:16px;font-weight:800;color:var(--text);}
+    .tool-desc{font-size:13px;color:var(--text-dim);line-height:1.6;font-weight:500;}
+    .tool-link{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.5px;margin-top:auto;}
+    .tool-card:hover .tool-link{color:var(--gold-accent);}
+    .notion-sub{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:16px;}
+    .notion-phase{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text-mid);font-size:12px;font-weight:600;transition:all 0.15s;}
+    .notion-phase:hover{border-color:var(--gold-accent);color:var(--text);background:var(--bg-card);}
+    .notion-phase .np-icon{font-size:14px;}
+
+    footer{padding:28px 36px;text-align:center;border-top:2px solid var(--border);font-size:12px;color:var(--text-muted);font-weight:500;background:var(--bg-alt);}
+    footer strong{color:var(--gold);font-weight:800;}
+
+    @media(max-width:768px){
+      .nav-links{display:none;}.hero{padding:88px 20px 56px;}.hero h1{font-size:30px;}
+      .progress-hud{grid-template-columns:1fr;}.stats-row{flex-wrap:wrap;margin:−36px 16px 0;border-radius:12px;}
+      .del-grid{grid-template-columns:1fr;}.tools-grid{grid-template-columns:1fr;}.score-layout{grid-template-columns:1fr;}
+      .prod-grid{grid-template-columns:1fr 1fr;}.support-inner{grid-template-columns:1fr;}
+      .team-grid{grid-template-columns:repeat(2,1fr);}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left"><span class="brand">TRIADEFLOW</span><span class="sep">|</span><span class="client">TALENTUS DIGITAL</span></div>
+  <div class="nav-links">
+    <a href="#progresso">Progresso</a><a href="#entrega">Entregas</a><a href="#pipelines">Pipelines</a><a href="#ferramentas">Miro &amp; Notion</a><a href="#score">Lead Score</a><a href="#timeline">Timeline</a><a href="#suporte">Suporte</a>
+  </div>
+  <a href="#suporte" class="nav-cta">Abrir Chamado</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge"><div class="pulse"></div> Painel ao Vivo</div>
+  <h1>Central de Acompanhamento<br><span class="gold">Projeto CRM Inteligente</span></h1>
+  <p class="subtitle">Talentus Digital &amp; CybNutri</p>
+  <p class="living-desc">Este painel e <strong>vivo</strong>. Acompanha em tempo real cada etapa do projeto. Conforme implementamos, status, percentuais e entregas atualizam automaticamente. <strong>Nenhuma surpresa. Total transparencia.</strong></p>
+  <div class="progress-hud" id="progresso">
+    <div class="prog-circle-wrap"><div class="prog-circle"><svg viewBox="0 0 168 168"><circle class="bg" cx="84" cy="84" r="68"/><circle class="fill" cx="84" cy="84" r="68" stroke-dasharray="427.3" stroke-dashoffset="154"/></svg><div class="center"><span class="pct">64%</span><span class="pct-label">Concluido</span></div></div></div>
+    <div class="prog-phases">
+      <div class="ph-row"><div class="ph-dot done"></div><div class="ph-info"><div class="ph-name">1. Diagnostico</div><div class="ph-bar"><div class="ph-bar-fill done" style="width:100%"></div></div></div><div class="ph-pct" style="color:#4ade80">100%</div></div>
+      <div class="ph-row"><div class="ph-dot done"></div><div class="ph-info"><div class="ph-name">2. Blueprint</div><div class="ph-bar"><div class="ph-bar-fill done" style="width:100%"></div></div></div><div class="ph-pct" style="color:#4ade80">100%</div></div>
+      <div class="ph-row"><div class="ph-dot done"></div><div class="ph-info"><div class="ph-name">3. Implantacao</div><div class="ph-bar"><div class="ph-bar-fill done" style="width:100%"></div></div></div><div class="ph-pct" style="color:#4ade80">100%</div></div>
+      <div class="ph-row"><div class="ph-dot progress"></div><div class="ph-info"><div class="ph-name">4. Automacao</div><div class="ph-bar"><div class="ph-bar-fill" style="width:50%;background:#60a5fa"></div></div></div><div class="ph-pct" style="color:#60a5fa">50%</div></div>
+      <div class="ph-row"><div class="ph-dot progress"></div><div class="ph-info"><div class="ph-name">5. Treinamento</div><div class="ph-bar"><div class="ph-bar-fill" style="width:50%;background:#60a5fa"></div></div></div><div class="ph-pct" style="color:#60a5fa">50%</div></div>
+      <div class="ph-row"><div class="ph-dot planned"></div><div class="ph-info"><div class="ph-name">6. Auditoria</div><div class="ph-bar"><div class="ph-bar-fill planned" style="width:0%"></div></div></div><div class="ph-pct">0%</div></div>
+      <div class="ph-row"><div class="ph-dot progress"></div><div class="ph-info"><div class="ph-name">7. Escala</div><div class="ph-bar"><div class="ph-bar-fill" style="width:50%;background:#60a5fa"></div></div></div><div class="ph-pct" style="color:#60a5fa">50%</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-row anim anim-scale">
+  <div class="stat"><div class="stat-n">6</div><div class="stat-l">Pipelines</div></div>
+  <div class="stat"><div class="stat-n">8</div><div class="stat-l">Produtos</div></div>
+  <div class="stat"><div class="stat-n">2</div><div class="stat-l">Marcas</div></div>
+  <div class="stat"><div class="stat-n">13</div><div class="stat-l">Workflows</div></div>
+  <div class="stat"><div class="stat-n">5</div><div class="stat-l">Ranges Score</div></div>
+  <div class="stat"><div class="stat-n">5</div><div class="stat-l">Vendedores</div></div>
+</div>
+
+<div class="next-action">
+  <div class="na-card anim anim-slide">
+    <div><div class="na-label">Proxima Acao</div><div class="na-title">Migracao de 7.094 leads do Kommo para o GHL</div><div class="na-desc">6 funis do Kommo mapeados e validados. Script pronto com checkpoint/resume. 8.568 leads totais, 7.094 migraveis (com telefone/email). Tags, campos e atribuicoes preservados.</div></div>
+    <div class="na-date">Em andamento</div>
+  </div>
+</div>
+
+<section id="entrega">
+  <div class="container">
+    <div class="sh anim"><h2>O que voce vai receber</h2><p>Cada item sera implementado, testado e documentado no seu CRM.</p></div>
+    <div class="del-grid">
+      <div class="del-card anim anim-delay-1"><h3>6 Pipelines</h3><p>Comercial, Recuperacao, Onboarding, Sucesso do Cliente, Nutricao e Suporte. Configurados com 22 campos, 38 tags e SLAs.</p></div>
+      <div class="del-card anim anim-delay-2"><h3>Lead Score Inteligente</h3><p>Sistema de pontuacao com tags. 5 faixas (Ouro, Prata, Bronze, Alerta, Churn) para saber quem priorizar.</p></div>
+      <div class="del-card anim anim-delay-3"><h3>13 Automacoes</h3><p>Entrada, SLA 30min, follow-ups, Won/Lost, recuperacao, nutricao, alertas de risco e notificacoes automaticas.</p></div>
+      <div class="del-card anim anim-delay-4"><h3>Campos + Tags</h3><p>Campos custom por etapa, tags padronizadas, motivos de perda e campos obrigatorios em cada stage.</p></div>
+      <div class="del-card anim anim-delay-5"><h3>2 Marcas, 1 CRM</h3><p>MATEUS e CYB no mesmo GHL, diferenciados por tags, mesma estrutura de funis.</p></div>
+      <div class="del-card anim anim-delay-6"><h3>Treinamento + SOPs</h3><p>Manual do Vendedor, Manual de Gestao e SOPs para o time operar com autonomia.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="pipelines">
+  <div class="container">
+    <div class="sh anim"><div class="sh-badge done">Implantado no GHL</div><h2>Estrutura dos Pipelines</h2><p>Mesma estrutura para ambas as marcas. 6 pipelines configurados com campos, tags e SLAs.</p></div>
+    <div class="brand-sw-wrap"><div class="brand-sw"><button class="brand-btn active" id="tab-mateus" onclick="switchBrand('mateus')">MATEUS</button><button class="brand-btn" id="tab-cyb" onclick="switchBrand('cyb')">CYB</button></div></div>
+
+    <div class="brand-content active" id="brand-mateus">
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Comercial</span><span class="funnel-tag">Principal</span></div><div class="flow"><div class="flow-stage entry">Atendimento Inicial</div><div class="flow-stage">Qualificacao</div><div class="flow-stage">Call Diagnostico</div><div class="flow-stage">Apresentacao R2</div><div class="flow-stage">Negociacao</div><div class="flow-stage won">WON</div><div class="flow-stage lost">LOST</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>SLA:</strong> 30min contato | D+2 follow-up | D+7 escalonamento</div><div class="funnel-spec"><strong>Produtos:</strong> Virada Digital, Escola de Negocios, Sala Secreta, Performance Day</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Recuperacao</span><span class="funnel-tag">Reativacao</span></div><div class="flow"><div class="flow-stage entry">Em Recuperacao</div><div class="flow-stage">Reengajamento</div><div class="flow-stage won">Recuperado</div><div class="flow-stage lost">Nao Recuperado</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>Origem:</strong> Webhook carrinho abandonado (GURU)</div><div class="funnel-spec"><strong>SLA:</strong> 1h para iniciar recuperacao</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Onboarding</span><span class="funnel-tag">Transitorio</span></div><div class="flow"><div class="flow-stage entry">Compra Aprovada</div><div class="flow-stage">Enviado</div><div class="flow-stage">Ativacao</div><div class="flow-stage won">Concluido</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>SLA:</strong> 2h envio | 24h confirmar | 72h ativacao</div><div class="funnel-spec"><strong>Saida:</strong> Concluido vai para Sucesso do Cliente</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Sucesso do Cliente</span><span class="funnel-tag">Retencao</span></div><div class="flow"><div class="flow-stage entry">Ativo</div><div class="flow-stage risk">Em Risco</div><div class="flow-stage special">Renovacao</div><div class="flow-stage special">Upsell</div><div class="flow-stage won">Expandido</div><div class="flow-stage lost">Churn</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>SLA produto:</strong> Virada Digital 30d | Sala Secreta 365d</div><div class="funnel-spec"><strong>Responsavel:</strong> Davi (Sucesso do Cliente)</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Nutricao</span><span class="funnel-tag">Nurturing</span></div><div class="flow"><div class="flow-stage entry">Entrada</div><div class="flow-stage">Ativa</div><div class="flow-stage">Engajado</div><div class="flow-stage won">Reativacao Comercial</div><div class="flow-stage lost">Inativo</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>Origem:</strong> Lost, Abandoned, Nao Recuperado + Leads de entrada Kommo</div><div class="funnel-spec"><strong>SLA:</strong> D+7 sequencia | D+90 avaliar inatividade</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Suporte</span><span class="funnel-tag">Atendimento</span></div><div class="flow"><div class="flow-stage entry">Novo Ticket</div><div class="flow-stage">Em Atendimento</div><div class="flow-stage won">Encerrado</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>Acesso:</strong> Apenas clientes ativos</div><div class="funnel-spec"><strong>SLA:</strong> 4h primeira resposta | 48h resolucao</div></div></div>
+    </div>
+
+    <div class="brand-content" id="brand-cyb">
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Comercial</span><span class="funnel-tag">Principal</span></div><div class="flow"><div class="flow-stage entry">Atendimento Inicial</div><div class="flow-stage">Qualificacao</div><div class="flow-stage">Call Diagnostico</div><div class="flow-stage">Apresentacao R2</div><div class="flow-stage">Negociacao</div><div class="flow-stage won">WON</div><div class="flow-stage lost">LOST</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>SLA:</strong> 30min contato | D+2 follow-up | D+7 escalonamento</div><div class="funnel-spec"><strong>Produtos:</strong> Low Ticket CYB, Escola Nutri Expert, Formacao Nutri Expert, Profissional Mentory</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Recuperacao</span><span class="funnel-tag">Reativacao</span></div><div class="flow"><div class="flow-stage entry">Lead Recuperado</div><div class="flow-stage">Reengajamento</div><div class="flow-stage">Qualificacao</div><div class="flow-stage won">Comercial</div><div class="flow-stage lost">Descartado</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Onboarding</span><span class="funnel-tag">Transitorio</span></div><div class="flow"><div class="flow-stage entry">Won Recebido</div><div class="flow-stage">Boas-vindas</div><div class="flow-stage">Acesso Plataforma</div><div class="flow-stage">Primeiro Contato</div><div class="flow-stage won">Ativado</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Sucesso do Cliente</span><span class="funnel-tag">Retencao</span></div><div class="flow"><div class="flow-stage entry">Ativo</div><div class="flow-stage risk">Em Risco</div><div class="flow-stage special">Renovacao</div><div class="flow-stage special">Upsell</div><div class="flow-stage won">Expandido</div><div class="flow-stage lost">Churn</div></div><div class="funnel-specs"><div class="funnel-spec"><strong>SLA produto:</strong> Low Ticket 15d | Escola NE 90d | Formacao Triagil 120d | P-Mentri 180d</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Nutricao</span><span class="funnel-tag">Nurturing</span></div><div class="flow"><div class="flow-stage entry">Classificacao</div><div class="flow-stage">Sequencia Ativa</div><div class="flow-stage">Engajou</div><div class="flow-stage won">Requalificado</div><div class="flow-stage lost">Frio</div></div></div>
+      <div class="funnel-card anim"><div class="funnel-header"><span class="funnel-name">Suporte</span><span class="funnel-tag">Atendimento</span></div><div class="flow"><div class="flow-stage entry">Aberto</div><div class="flow-stage">Em Atendimento</div><div class="flow-stage">Aguardando Cliente</div><div class="flow-stage won">Resolvido</div><div class="flow-stage lost">Encerrado</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="ferramentas">
+  <div class="container">
+    <div class="sh anim"><h2>Ferramentas do Projeto</h2><p>Acesse diretamente o fluxo visual no Miro e toda a documentacao no Notion.</p></div>
+    <div class="tools-grid">
+      <a href="https://miro.com/app/board/uXjVG7NdkHo=/" target="_blank" class="tool-card anim anim-delay-1">
+        <div class="tool-icon miro">M</div>
+        <div class="tool-name">Miro - Fluxo Comercial</div>
+        <div class="tool-desc">Visualizacao completa dos 6 pipelines, etapas, decisoes Won/Lost e conexoes entre funis. Board interativo.</div>
+        <div class="tool-link">Abrir no Miro &#8599;</div>
+      </a>
+      <a href="https://www.notion.so/31e8514a15b581e5b286de68a2a88d4b" target="_blank" class="tool-card anim anim-delay-2">
+        <div class="tool-icon notion">N</div>
+        <div class="tool-name">Notion - Hub do Projeto</div>
+        <div class="tool-desc">Central de documentacao com todas as 7 fases TDI, specs, decisoes e acompanhamento completo do projeto.</div>
+        <div class="tool-link">Abrir no Notion &#8599;</div>
+      </a>
+      <div class="tool-card anim anim-delay-3" style="border-style:dashed;cursor:default;">
+        <div class="tool-icon notion" style="background:var(--bg-alt);color:var(--text-dim);">N</div>
+        <div class="tool-name">Notion - Fases TDI</div>
+        <div class="tool-desc">Acesso direto a cada fase do projeto:</div>
+        <div class="notion-sub">
+          <a href="https://www.notion.so/41b8514a15b582908ebd01f43ab06e37" target="_blank" class="notion-phase"><span class="np-icon">&#128202;</span> Diagnostico</a>
+          <a href="https://www.notion.so/3928514a15b5836a939301978e1d2f90" target="_blank" class="notion-phase"><span class="np-icon">&#129504;</span> Blueprint</a>
+          <a href="https://www.notion.so/5d38514a15b5822e8913810f30973130" target="_blank" class="notion-phase"><span class="np-icon">&#9874;&#65039;</span> Implantacao</a>
+          <a href="https://www.notion.so/4538514a15b5831196cc8155cd6ac091" target="_blank" class="notion-phase"><span class="np-icon">&#9881;&#65039;</span> Automacoes</a>
+          <a href="https://www.notion.so/5738514a15b58307a21501803ac8b336" target="_blank" class="notion-phase"><span class="np-icon">&#128104;&#8205;&#127979;</span> Treinamento</a>
+          <a href="https://www.notion.so/ae68514a15b583b3af590154b6dfafef" target="_blank" class="notion-phase"><span class="np-icon">&#128269;</span> Auditoria</a>
+          <a href="https://www.notion.so/e218514a15b5827094ae016ba2700af5" target="_blank" class="notion-phase"><span class="np-icon">&#128200;</span> Metricas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="score">
+  <div class="container">
+    <div class="sh anim"><h2>Lead Score</h2><p>Pontuacao automatica com tags inteligentes no GHL.</p></div>
+    <div class="score-layout">
+      <div class="score-card anim"><h3>Faixas de Score</h3>
+        <div class="sc-row"><span class="sc-badge ouro">OURO</span><div><span class="sc-pts">80+ pontos</span><br><span class="sc-desc">Pronto para venda / upsell</span></div></div>
+        <div class="sc-row"><span class="sc-badge prata">PRATA</span><div><span class="sc-pts">50-79 pontos</span><br><span class="sc-desc">Engajado, nurturing final</span></div></div>
+        <div class="sc-row"><span class="sc-badge bronze">BRONZE</span><div><span class="sc-pts">20-49 pontos</span><br><span class="sc-desc">Interesse inicial</span></div></div>
+        <div class="sc-row"><span class="sc-badge alerta">ALERTA</span><div><span class="sc-pts">0-19 pontos</span><br><span class="sc-desc">Frio, baixa prioridade</span></div></div>
+        <div class="sc-row"><span class="sc-badge churn">CHURN</span><div><span class="sc-pts">Negativo</span><br><span class="sc-desc">Cancelou ou abandonou</span></div></div>
+      </div>
+      <div class="score-card anim"><h3>Tags de Pontuacao</h3>
+        <div class="tag-row"><span class="tag-name">RESPONDEU_CONTATO</span><span class="tag-pts tag-pos">+15</span></div>
+        <div class="tag-row"><span class="tag-name">AGENDOU_REUNIAO</span><span class="tag-pts tag-pos">+20</span></div>
+        <div class="tag-row"><span class="tag-name">COMPARECEU_REUNIAO</span><span class="tag-pts tag-pos">+25</span></div>
+        <div class="tag-row"><span class="tag-name">PEDIU_PROPOSTA</span><span class="tag-pts tag-pos">+20</span></div>
+        <div class="tag-row"><span class="tag-name">COMPROU_PRODUTO</span><span class="tag-pts tag-pos">+30</span></div>
+        <div class="tag-row"><span class="tag-name">INDICOU_ALGUEM</span><span class="tag-pts tag-pos">+15</span></div>
+        <div class="tag-row"><span class="tag-name">COMPROU_2_PRODUTOS</span><span class="tag-pts tag-pos">+20</span></div>
+        <div style="height:10px;"></div>
+        <div class="tag-row"><span class="tag-name">NAO_RESPONDEU_48H</span><span class="tag-pts tag-neg">-10</span></div>
+        <div class="tag-row"><span class="tag-name">FALTOU_REUNIAO</span><span class="tag-pts tag-neg">-15</span></div>
+        <div class="tag-row"><span class="tag-name">RECUSOU_PROPOSTA</span><span class="tag-pts tag-neg">-10</span></div>
+        <div class="tag-row"><span class="tag-name">PEDIU_REEMBOLSO</span><span class="tag-pts tag-neg">-30</span></div>
+        <div class="tag-row"><span class="tag-name">CANCELOU_ASSINATURA</span><span class="tag-pts tag-neg">-25</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="produtos">
+  <div class="container">
+    <div class="sh anim"><h2>Produtos por Marca</h2><p>8 produtos com SLAs de renovacao, upsell e risco.</p></div>
+    <div class="prod-section-label">MATEUS | Talentus Digital</div>
+    <div class="prod-grid">
+      <div class="prod-card anim"><div class="prod-name">Virada Digital</div><div class="prod-price">R$ 1.500 - 2.500</div><div class="prod-sla">Renovacao: <span>30d</span><br>Upsell: <span>60d</span><br>Risco: <span>45d</span></div></div>
+      <div class="prod-card anim"><div class="prod-name">END</div><div class="prod-price">R$ 48.000/ano</div><div class="prod-sla">Renovacao: <span>180d</span><br>Upsell: <span>90d</span><br>Risco: <span>30d</span></div></div>
+      <div class="prod-card anim"><div class="prod-name">Sala Secreta</div><div class="prod-price">R$ 144K - 240K</div><div class="prod-sla">Renovacao: <span>365d</span><br>Upsell: <span>180d</span><br>Risco: <span>60d</span></div></div>
+      <div class="prod-card anim"><div class="prod-name">Performance Day</div><div class="prod-price">Evento</div><div class="prod-sla">Renovacao: <span>Proximo</span><br>Upsell: <span>D+7</span><br>Risco: <span>N/A</span></div></div>
+    </div>
+    <div class="prod-section-label">CYB | CybNutri</div>
+    <div class="prod-grid">
+      <div class="prod-card anim"><div class="prod-name">Low Ticket</div><div class="prod-price">R$ 97 - 197</div><div class="prod-sla">Renovacao: <span>15d</span><br>Upsell: <span>7d</span><br>Risco: <span>30d</span></div></div>
+      <div class="prod-card anim"><div class="prod-name">Escola Nutri Expert</div><div class="prod-price">Assinatura</div><div class="prod-sla">Renovacao: <span>90d</span><br>Upsell: <span>60d</span><br>Risco: <span>15d</span></div></div>
+      <div class="prod-card anim"><div class="prod-name">Formacao Triagil</div><div class="prod-price">Formacao</div><div class="prod-sla">Renovacao: <span>120d</span><br>Upsell: <span>90d</span><br>Risco: <span>30d</span></div></div>
+      <div class="prod-card anim"><div class="prod-name">P-Mentri</div><div class="prod-price">Mentoria</div><div class="prod-sla">Renovacao: <span>180d</span><br>Upsell: <span>120d</span><br>Risco: <span>45d</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="sh anim"><h2>Equipe</h2><p>Time que operara o CRM.</p></div>
+    <div class="team-grid">
+      <div class="team-card anim"><div class="team-av">MC</div><div class="team-n">Mateus Cortez</div><div class="team-r">CEO / Admin</div></div>
+      <div class="team-card anim"><div class="team-av">LR</div><div class="team-n">Lucas Rodrigues</div><div class="team-r">Comercial</div></div>
+      <div class="team-card anim"><div class="team-av">KY</div><div class="team-n">Karla Yonara</div><div class="team-r">Comercial</div></div>
+      <div class="team-card anim"><div class="team-av">GL</div><div class="team-n">Gilcilene Lima</div><div class="team-r">Comercial</div></div>
+      <div class="team-card anim"><div class="team-av">JM</div><div class="team-n">Jessica Monteiro</div><div class="team-r">Comercial</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="container">
+    <div class="sh anim"><div class="sh-badge" style="background:rgba(38,86,176,0.08);color:#2656b0;border-color:rgba(38,86,176,0.25)">Em Configuracao</div><h2>13 Automacoes</h2><p>Workflows a serem criados manualmente no GHL. Instrucoes detalhadas geradas.</p></div>
+    <div class="wf-wrap">
+      <table class="wf-table">
+        <thead><tr><th>#</th><th>Workflow</th><th>Pipeline</th><th>Trigger</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>W01</td><td>Lead Entry - Comercial</td><td>Comercial</td><td>Customer Replied</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W02</td><td>SLA 30min - Comercial</td><td>Comercial</td><td>Stage: Atendimento Inicial</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W03</td><td>Follow-up Automatico</td><td>Comercial</td><td>Stages multiplos</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W04</td><td>Follow-up Escalonamento D+7</td><td>Comercial</td><td>Apresentacao R2 / Negociacao</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W05</td><td>Won → Onboarding</td><td>Comercial</td><td>Opp Status: Won</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W06</td><td>Lost → Nutricao</td><td>Comercial</td><td>Opp Status: Lost</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W07</td><td>Requalificado</td><td>Nutricao</td><td>Reativacao Comercial</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W08</td><td>Abandoned → Nutricao</td><td>Comercial</td><td>Opp Status: Abandoned</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W09</td><td>Recuperacao Checkout</td><td>Recuperacao</td><td>Webhook checkout</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W10</td><td>Onboarding Concluido → Sucesso</td><td>Onboarding</td><td>Stage: Concluido</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W11</td><td>Inatividade 90 dias</td><td>Global</td><td>90 dias sem interacao</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W12</td><td>Lembrete Call Diagnostico</td><td>Comercial</td><td>Stage: Call Diagnostico</td><td><span class="wf-badge">Planejado</span></td></tr>
+          <tr><td>W13</td><td>Recuperacao No-Show</td><td>Comercial</td><td>No-show 48h</td><td><span class="wf-badge">Planejado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="timeline">
+  <div class="container">
+    <div class="sh anim"><h2>Timeline do Projeto</h2><p>7 fases da metodologia TDI. Atualizado em tempo real.</p></div>
+    <div class="tl-container">
+      <div class="tl-item anim anim-slide"><div class="tl-dot done">&#10003;</div><div class="tl-card"><div class="tl-top"><h3>Fase 1 - Diagnostico</h3><span class="tl-status done">Concluido</span></div><div class="tl-date">24 Fev 2026. Onboarding realizado</div><div class="tl-tags"><span class="tl-tag">Transcript</span><span class="tl-tag">Mapa mental</span><span class="tl-tag">8 produtos</span><span class="tl-tag">6 funis</span><span class="tl-tag">Equipe</span></div></div></div>
+      <div class="tl-item anim anim-slide"><div class="tl-dot done">&#10003;</div><div class="tl-card"><div class="tl-top"><h3>Fase 2 - Blueprint</h3><span class="tl-status done">Concluido</span></div><div class="tl-date">09 Mar 2026. Specs aprovadas pelo Mateus (10 ajustes aplicados)</div><div class="tl-tags"><span class="tl-tag">6 pipelines</span><span class="tl-tag">Lead Score</span><span class="tl-tag">Campos e tags</span><span class="tl-tag">SLAs</span><span class="tl-tag">13 workflows</span><span class="tl-tag">Miro</span><span class="tl-tag">Notion</span></div></div></div>
+      <div class="tl-item anim anim-slide"><div class="tl-dot done">&#10003;</div><div class="tl-card"><div class="tl-top"><h3>Fase 3 - Implantacao</h3><span class="tl-status done">Concluido</span></div><div class="tl-date">12 Mar 2026. 22 campos, 6 pipelines, 38 tags, 5 usuarios, 2 calendarios</div><div class="tl-tags"><span class="tl-tag">Campos GHL</span><span class="tl-tag">Pipelines</span><span class="tl-tag">Tags</span><span class="tl-tag">Usuarios</span><span class="tl-tag">Calendarios</span><span class="tl-tag">Round Robin</span><span class="tl-tag">Verify 99%</span></div></div></div>
+      <div class="tl-item anim anim-slide"><div class="tl-dot progress" style="background:#60a5fa;border-color:#3b82f6">4</div><div class="tl-card"><div class="tl-top"><h3>Fase 4 - Automacao</h3><span class="tl-status" style="background:rgba(38,86,176,0.08);color:#2656b0;border-color:rgba(38,86,176,0.25)">Em andamento</span></div><div class="tl-date">13 workflows planejados. Instrucoes detalhadas geradas.</div><div class="tl-tags"><span class="tl-tag">13 workflows</span><span class="tl-tag">Instrucoes geradas</span><span class="tl-tag">Criacao manual no GHL</span></div></div></div>
+      <div class="tl-item anim anim-slide"><div class="tl-dot progress" style="background:#60a5fa;border-color:#3b82f6">5</div><div class="tl-card"><div class="tl-top"><h3>Fase 5 - Treinamento</h3><span class="tl-status" style="background:rgba(38,86,176,0.08);color:#2656b0;border-color:rgba(38,86,176,0.25)">Em andamento</span></div><div class="tl-date">Materiais gerados. Sessao ao vivo pendente com Mateus.</div><div class="tl-tags"><span class="tl-tag">Manual Vendedor</span><span class="tl-tag">Manual Gestao</span><span class="tl-tag">SOPs</span><span class="tl-tag">Sessao ao vivo</span></div></div></div>
+      <div class="tl-item anim anim-slide"><div class="tl-dot planned">6</div><div class="tl-card"><div class="tl-top"><h3>Fase 6 - Auditoria</h3><span class="tl-status planned">Aguardando</span></div><div class="tl-date">Apos Fase 5</div><div class="tl-tags"><span class="tl-tag">Dados teste</span><span class="tl-tag">Validacao</span><span class="tl-tag">Cenarios</span><span class="tl-tag">Limpeza</span></div></div></div>
+      <div class="tl-item anim anim-slide"><div class="tl-dot progress" style="background:#60a5fa;border-color:#3b82f6">7</div><div class="tl-card"><div class="tl-top"><h3>Fase 7 - Escala</h3><span class="tl-status" style="background:rgba(38,86,176,0.08);color:#2656b0;border-color:rgba(38,86,176,0.25)">Em andamento</span></div><div class="tl-date">Dashboard LIVE. Notion + Asana configurados. Migracao Kommo em andamento.</div><div class="tl-tags"><span class="tl-tag">Dashboard LIVE</span><span class="tl-tag">Meta Ads conectado</span><span class="tl-tag">Migracao 7.094 leads</span><span class="tl-tag">Notion Hub</span><span class="tl-tag">Asana 29 tasks</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="support-section" id="suporte">
+  <div class="support-inner anim">
+    <div class="support-left">
+      <h2>Central de Suporte</h2>
+      <div class="smart-badge">Formulario Inteligente</div>
+      <p>Este formulario e <strong>interativo e inteligente</strong>. Tudo que voce enviar aqui notifica automaticamente nosso time e cria uma tarefa em nossa plataforma de gestao. Cada chamado e rastreado, priorizado e respondido. <strong>Nada se perde, nada fica esquecido</strong>.</p>
+      <div class="support-cats">
+        <div class="sup-cat"><div class="sup-cat-title">Bug</div><div class="sup-cat-desc">Algo nao funciona como deveria</div></div>
+        <div class="sup-cat"><div class="sup-cat-title">Duvida</div><div class="sup-cat-desc">Preciso entender como funciona</div></div>
+        <div class="sup-cat"><div class="sup-cat-title">Ajuste</div><div class="sup-cat-desc">Quero alterar ou melhorar algo</div></div>
+        <div class="sup-cat"><div class="sup-cat-title">Sugestao</div><div class="sup-cat-desc">Tenho uma ideia para o projeto</div></div>
+      </div>
+    </div>
+    <div class="support-form">
+      <h3>Abrir Chamado</h3>
+      <p class="form-desc">Ao enviar, nosso time recebe uma notificacao imediata e uma tarefa e criada automaticamente com prioridade e prazo. Voce recebera retorno em ate 24h.</p>
+      <form id="ticketForm" onsubmit="submitTicket(event)">
+      <div class="fg"><label>Seu nome</label><input type="text" id="nome" placeholder="Ex: Mateus Cortez" required></div>
+      <div class="fg"><label>E-mail</label><input type="email" id="email" placeholder="seu@email.com" required></div>
+      <div class="fg"><label>WhatsApp</label><input type="tel" id="telefone" placeholder="(19) 99999-9999" required></div>
+      <div class="fg"><label>Categoria</label><select id="categoria" required><option value="">Selecione...</option><option>Bug</option><option>Duvida</option><option>Ajuste</option><option>Sugestao</option></select></div>
+      <div class="fg"><label>Area do CRM</label><select id="area" required><option value="">Selecione...</option><option>Pipelines</option><option>Workflows</option><option>Campos / Tags</option><option>Lead Score</option><option>Usuarios</option><option>Outro</option></select></div>
+      <div class="fg"><label>Assunto</label><input type="text" id="assunto" placeholder="Resumo do chamado" required></div>
+      <div class="fg"><label>Descricao</label><textarea id="descricao" placeholder="Descreva com detalhes..." required></textarea></div>
+      <button type="submit" class="form-btn" id="submitBtn">Enviar Chamado</button>
+      </form>
+      <div id="form-success" style="display:none;text-align:center;padding:24px 0;"><div style="font-size:15px;font-weight:800;color:var(--done);margin-bottom:6px;">Chamado enviado com sucesso</div><div style="font-size:12px;color:var(--text-dim);font-weight:500;">Nosso time foi notificado, uma tarefa foi criada e voce recebera confirmacao no WhatsApp. Retorno em ate 24h.</div><button onclick="resetForm()" style="margin-top:16px;padding:8px 20px;border-radius:6px;border:2px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);font-weight:700;font-size:12px;cursor:pointer;">Enviar outro chamado</button></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container" style="text-align:center;">
+    <div class="sh anim"><h2>Contato Direto</h2></div>
+    <div class="contact-row">
+      <a href="https://wa.me/5519983805908?text=Oi%20Alex%2C%20tenho%20uma%20duvida%20sobre%20meu%20projeto%20CRM" target="_blank" class="contact-card"><div><div class="cc-title">WhatsApp</div><div class="cc-sub">(19) 98380-5908</div></div></a>
+      <a href="https://instagram.com/triadeflow" target="_blank" class="contact-card"><div><div class="cc-title">Instagram</div><div class="cc-sub">@triadeflow</div></div></a>
+    </div>
+  </div>
+</section>
+
+<footer>Implementado por <strong>Triadeflow</strong> | Metodologia TDI&trade; | Talentus Digital &amp; CybNutri | Marco 2026</footer>
+
+<script>
+/* Brand switcher */
+function switchBrand(b){document.querySelectorAll('.brand-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.brand-btn').forEach(e=>e.classList.remove('active'));document.getElementById('brand-'+b).classList.add('active');document.getElementById('tab-'+b).classList.add('active');}
+
+/* Smooth scroll */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
+
+/* Scroll animations (IntersectionObserver) */
+(function(){
+  var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.anim').forEach(function(el){obs.observe(el);});
+})();
+
+/* Counter animation for stats */
+document.querySelectorAll('.stat-n').forEach(function(el){
+  var target=parseInt(el.textContent);if(isNaN(target))return;
+  el.textContent='0';
+  var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){
+    var start=0;var dur=800;var t0=null;
+    function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1);el.textContent=Math.floor(p*target);if(p<1)requestAnimationFrame(step);else el.textContent=target;}
+    requestAnimationFrame(step);obs.unobserve(el);
+  }});},{threshold:0.5});
+  obs.observe(el);
+});
+
+/* Nav shrink on scroll */
+(function(){
+  var nav=document.querySelector('nav');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>80){nav.style.height='50px';nav.style.boxShadow='0 2px 30px rgba(0,0,0,0.25)';}
+    else{nav.style.height='60px';nav.style.boxShadow='0 2px 20px rgba(0,0,0,0.15)';}
+  });
+})();
+
+/* Progress circle animation */
+(function(){
+  var circle=document.querySelector('.prog-circle .fill');
+  if(circle){
+    var full=427.3;var pct=30;var offset=full-(full*pct/100);
+    circle.style.strokeDashoffset=full+'';
+    var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){
+      setTimeout(function(){circle.style.transition='stroke-dashoffset 1.2s ease';circle.style.strokeDashoffset=offset+'';},300);
+      obs.unobserve(e.target);
+    }});},{threshold:0.3});
+    obs.observe(circle);
+  }
+})();
+
+/* Asana integration */
+var ASANA_PAT='2/1212830990272012/1213536213971288:f610b2ec8ddc2e4c9cfb3792637035be';
+var ASANA_PROJECT='1213599567189728';
+
+/* Z-API WhatsApp */
+var ZAPI_INSTANCE='3EE52809B2674111E65B0A9F1770609E';
+var ZAPI_TOKEN='0979A3F00E3994A164770964';
+var ZAPI_CLIENT_TOKEN='F5d48b16cc5d34a4c98f24560d7e8274bS';
+var TRIADEFLOW_PHONE='5519983805908';
+
+function cleanPhone(phone){
+  var digits=phone.replace(/\D/g,'');
+  if(digits.length===11)digits='55'+digits;
+  if(digits.length===10)digits='55'+digits;
+  return digits;
+}
+
+function sendWhatsApp(phone,message){
+  return fetch('https://api.z-api.io/instances/'+ZAPI_INSTANCE+'/token/'+ZAPI_TOKEN+'/send-text',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Client-Token':ZAPI_CLIENT_TOKEN},
+    body:JSON.stringify({phone:phone,message:message})
+  }).then(function(r){return r.json();}).catch(function(err){console.warn('WhatsApp send error:',err);});
+}
+
+function submitTicket(e){
+  e.preventDefault();
+  var btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='Enviando...';
+
+  var nome=document.getElementById('nome').value;
+  var email=document.getElementById('email').value;
+  var telefone=document.getElementById('telefone').value;
+  var categoria=document.getElementById('categoria').value;
+  var area=document.getElementById('area').value;
+  var assunto=document.getElementById('assunto').value;
+  var descricao=document.getElementById('descricao').value;
+  var dataHora=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  var clientPhone=cleanPhone(telefone);
+
+  var taskName='['+categoria.toUpperCase()+'] '+assunto;
+  var taskNotes='Categoria: '+categoria+'\nArea: '+area+'\nSolicitante: '+nome+'\nEmail: '+email+'\nWhatsApp: '+telefone+'\n\nDescricao:\n'+descricao+'\n\nEnviado em: '+dataHora+'\nPortal: talentusdigital.triadeflow.ai';
+
+  /* 1. Criar task no Asana */
+  fetch('https://app.asana.com/api/1.0/tasks',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+ASANA_PAT,'Content-Type':'application/json'},
+    body:JSON.stringify({data:{name:taskName,notes:taskNotes,projects:[ASANA_PROJECT]}})
+  }).then(function(r){
+    if(!r.ok)throw new Error('Erro '+r.status);return r.json();
+  }).then(function(){
+    /* 2. Notificar Triadeflow via WhatsApp */
+    var msgTeam='*Novo chamado no portal Talentus Digital*\n\n'
+      +'*Categoria:* '+categoria+'\n'
+      +'*Area:* '+area+'\n'
+      +'*Assunto:* '+assunto+'\n'
+      +'*Solicitante:* '+nome+'\n'
+      +'*WhatsApp:* '+telefone+'\n'
+      +'*Email:* '+email+'\n\n'
+      +'*Descricao:*\n'+descricao+'\n\n'
+      +'_Task criada no Asana automaticamente_';
+    sendWhatsApp(TRIADEFLOW_PHONE,msgTeam);
+
+    /* 3. Confirmar para o cliente via WhatsApp */
+    if(clientPhone.length>=12){
+      var msgClient='Oi '+nome.split(' ')[0]+', recebemos seu chamado no portal Talentus Digital.\n\n'
+        +'*Assunto:* '+assunto+'\n'
+        +'*Categoria:* '+categoria+'\n\n'
+        +'Nossa equipe foi notificada e voce recebera retorno em ate 24h. Obrigado!';
+      sendWhatsApp(clientPhone,msgClient);
+    }
+
+    document.getElementById('ticketForm').style.display='none';
+    document.getElementById('form-success').style.display='block';
+    document.querySelector('.support-form h3').style.display='none';
+  }).catch(function(err){
+    btn.disabled=false;btn.textContent='Enviar Chamado';
+    alert('Erro ao enviar chamado. Tente novamente ou entre em contato pelo WhatsApp.');
+    console.error('Asana API error:',err);
+  });
+}
+
+function resetForm(){
+  document.getElementById('ticketForm').style.display='block';
+  document.getElementById('form-success').style.display='none';
+  document.querySelector('.support-form h3').style.display='block';
+  document.getElementById('ticketForm').reset();
+  document.getElementById('submitBtn').disabled=false;
+  document.getElementById('submitBtn').textContent='Enviar Chamado';
+}
+</script>
+</body>
+</html>

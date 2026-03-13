@@ -149,6 +149,9 @@ app.use(express.json());
 // Serve static photos (seller avatars)
 app.use('/photos', express.static(path.join(__dirname, 'public', 'photos')));
 
+// Serve portal (Central de Acompanhamento)
+app.use('/portal', express.static(path.join(__dirname, 'public', 'portal')));
+
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
 }
