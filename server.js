@@ -45,31 +45,31 @@ const PIPELINE_NAMES = {
 // Kyonara=CfeKqpQX6eWKCVVwyRsQ, Mateus=77uDX774vmKxyMxEhfCR, Jessica=W4iYpPWuyc1lVnfyIKa5
 const SELLER_META = {
   'lucas rodrigues': {
-    photo: null,
+    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Lucas&backgroundColor=26428B',
     role: 'Vendedor',
     email: 'profissional.lucasrodrigues@gmail.com',
     ghlId: '9AXuakmsPmncaaojIyGw',
   },
   'gilcilene lima': {
-    photo: null,
+    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Gilcilene&backgroundColor=10b981',
     role: 'Vendedora',
     email: 'gilcilenelimaadm25@gmail.com',
     ghlId: '2Z0eH6IjgWDqUw5b4fqS',
   },
   'kyonara gomes': {
-    photo: null,
+    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Kyonara&backgroundColor=8b5cf6',
     role: 'Vendedora',
     email: 'kyonaragomes@gmail.com',
     ghlId: 'CfeKqpQX6eWKCVVwyRsQ',
   },
   'mateus cortez': {
-    photo: null,
+    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Mateus&backgroundColor=f59e0b',
     role: 'CEO / Estrategista',
     email: 'mateuscortez@empresacmcdigital.com',
     ghlId: '77uDX774vmKxyMxEhfCR',
   },
   'jessica monteiro': {
-    photo: null,
+    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Jessica&backgroundColor=ec4899',
     role: 'Suporte / Admin',
     email: 'suporte@empresacmcdigital.com',
     ghlId: 'W4iYpPWuyc1lVnfyIKa5',
