@@ -276,7 +276,37 @@ async function fetchAllPipelineOpportunities() {
   return results;
 }
 
-// GHL Custom Field ID → logical name mapping
+// --- Tag-based marca/produto extraction ---
+const TAG_MARCA_MAP = {
+  'marca_mateus': 'Mateus Cortez',
+  'marca_cyb': 'CybNutri',
+};
+const TAG_PRODUTO_MAP = {
+  'produto_virada_digital': 'Virada Digital',
+  'produto_escola_negocios': 'Escola de Negocios',
+  'produto_escola_nutri': 'Escola Nutri Expert',
+  'produto_formacao_nutri': 'Formacao Nutri Expert',
+  'produto_low_ticket_cyb': 'Low Ticket CYB',
+  'produto_profissional_mentory': 'Profissional Mentory',
+};
+
+function getMarcaFromTags(tags) {
+  if (!tags || !Array.isArray(tags)) return null;
+  for (const tag of tags) {
+    if (TAG_MARCA_MAP[tag]) return TAG_MARCA_MAP[tag];
+  }
+  return null;
+}
+
+function getProdutoFromTags(tags) {
+  if (!tags || !Array.isArray(tags)) return null;
+  for (const tag of tags) {
+    if (TAG_PRODUTO_MAP[tag]) return TAG_PRODUTO_MAP[tag];
+  }
+  return null;
+}
+
+// GHL Custom Field ID → logical name mapping (fallback)
 const CUSTOM_FIELD_MAP = {
   '2KaHcDNMZDwsozLFB1lL': 'marca',
   'qpiSM6URmXbv28u0aFUH': 'produto',
@@ -286,15 +316,24 @@ const CUSTOM_FIELD_MAP = {
 
 // --- Helper: Get custom field value from opp ---
 function getCustomField(opp, ...keys) {
+  // First try tags (GHL stores marca/produto as contact tags)
+  const tags = opp.contact?.tags || opp.tags || [];
+  if (keys.includes('marca')) {
+    const marca = getMarcaFromTags(tags);
+    if (marca) return marca;
+  }
+  if (keys.includes('produto')) {
+    const produto = getProdutoFromTags(tags);
+    if (produto) return produto;
+  }
+  // Fallback: customFields
   const fields = opp.customFields || [];
   for (const f of fields) {
-    // Check by field ID mapping
     const fieldId = f.id || f.key || '';
     const mappedName = CUSTOM_FIELD_MAP[fieldId];
     if (mappedName && keys.some(key => mappedName.includes(key))) {
       return f.value || f.fieldValue || f.field_value || null;
     }
-    // Check by key/fieldKey name (fallback)
     const k = (f.key || f.fieldKey || '').toLowerCase();
     if (keys.some(key => k.includes(key))) {
       return f.value || f.fieldValue || f.field_value || null;

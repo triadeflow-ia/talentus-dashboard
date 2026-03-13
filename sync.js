@@ -70,7 +70,38 @@ function resolveSellerName(raw) {
   return raw;
 }
 
-// GHL Custom Field ID → logical name mapping
+// --- Tag-based marca/produto extraction ---
+// GHL doesn't return customFields in search — data is in contact.tags
+const TAG_MARCA_MAP = {
+  'marca_mateus': 'Mateus Cortez',
+  'marca_cyb': 'CybNutri',
+};
+const TAG_PRODUTO_MAP = {
+  'produto_virada_digital': 'Virada Digital',
+  'produto_escola_negocios': 'Escola de Negocios',
+  'produto_escola_nutri': 'Escola Nutri Expert',
+  'produto_formacao_nutri': 'Formacao Nutri Expert',
+  'produto_low_ticket_cyb': 'Low Ticket CYB',
+  'produto_profissional_mentory': 'Profissional Mentory',
+};
+
+function getMarcaFromTags(tags) {
+  if (!tags || !Array.isArray(tags)) return null;
+  for (const tag of tags) {
+    if (TAG_MARCA_MAP[tag]) return TAG_MARCA_MAP[tag];
+  }
+  return null;
+}
+
+function getProdutoFromTags(tags) {
+  if (!tags || !Array.isArray(tags)) return null;
+  for (const tag of tags) {
+    if (TAG_PRODUTO_MAP[tag]) return TAG_PRODUTO_MAP[tag];
+  }
+  return null;
+}
+
+// GHL Custom Field ID → logical name mapping (fallback if customFields ever present)
 const CUSTOM_FIELD_MAP = {
   '2KaHcDNMZDwsozLFB1lL': 'marca',
   'qpiSM6URmXbv28u0aFUH': 'produto',
@@ -81,13 +112,11 @@ const CUSTOM_FIELD_MAP = {
 function getCustomField(opp, ...keys) {
   const fields = opp.customFields || [];
   for (const f of fields) {
-    // Check by field ID mapping
     const fieldId = f.id || f.key || '';
     const mappedName = CUSTOM_FIELD_MAP[fieldId];
     if (mappedName && keys.some(key => mappedName.includes(key))) {
       return f.value || f.fieldValue || f.field_value || null;
     }
-    // Check by key/fieldKey name (fallback)
     const k = (f.key || f.fieldKey || '').toLowerCase();
     if (keys.some(key => k.includes(key))) {
       return f.value || f.fieldValue || f.field_value || null;
@@ -171,29 +200,33 @@ export async function syncGHL() {
         const opps = data.opportunities || [];
 
         if (opps.length > 0) {
-          const rows = opps.map(opp => ({
-            id: opp.id,
-            pipeline_id: pipelineId,
-            pipeline_name: pipelineName,
-            pipeline_stage_id: opp.pipelineStageId || null,
-            pipeline_stage_name: stageMap[opp.pipelineStageId] || opp.pipelineStageName || null,
-            status: opp.status || 'open',
-            contact_id: opp.contactId || opp.contact?.id || null,
-            contact_name: opp.contact?.name || opp.contactName || null,
-            contact_email: opp.contact?.email || null,
-            contact_phone: opp.contact?.phone || null,
-            monetary_value: parseFloat(opp.monetaryValue) || 0,
-            marca: getCustomField(opp, 'marca') || null,
-            produto: getCustomField(opp, 'produto') || null,
-            vendedor: resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || null,
-            assigned_to: opp.assignedTo || null,
-            loss_reason: getCustomField(opp, 'motivo') || null,
-            source: getCustomField(opp, 'origem') || null,
-            tags: opp.tags || [],
-            created_at: opp.createdAt || opp.dateAdded || new Date().toISOString(),
-            updated_at: opp.updatedAt || opp.lastStatusChangeAt || null,
-            synced_at: new Date().toISOString(),
-          }));
+          const rows = opps.map(opp => {
+            // Tags come from contact (GHL search returns contact.tags)
+            const contactTags = opp.contact?.tags || opp.tags || [];
+            return {
+              id: opp.id,
+              pipeline_id: pipelineId,
+              pipeline_name: pipelineName,
+              pipeline_stage_id: opp.pipelineStageId || null,
+              pipeline_stage_name: stageMap[opp.pipelineStageId] || opp.pipelineStageName || null,
+              status: opp.status || 'open',
+              contact_id: opp.contactId || opp.contact?.id || null,
+              contact_name: opp.contact?.name || opp.contactName || null,
+              contact_email: opp.contact?.email || null,
+              contact_phone: opp.contact?.phone || null,
+              monetary_value: parseFloat(opp.monetaryValue) || 0,
+              marca: getMarcaFromTags(contactTags) || getCustomField(opp, 'marca') || null,
+              produto: getProdutoFromTags(contactTags) || getCustomField(opp, 'produto') || null,
+              vendedor: resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || null,
+              assigned_to: opp.assignedTo || null,
+              loss_reason: getCustomField(opp, 'motivo') || null,
+              source: getCustomField(opp, 'origem') || null,
+              tags: contactTags,
+              created_at: opp.createdAt || opp.dateAdded || new Date().toISOString(),
+              updated_at: opp.updatedAt || opp.lastStatusChangeAt || null,
+              synced_at: new Date().toISOString(),
+            };
+          });
 
           const { error } = await sb.from('opportunities').upsert(rows, { onConflict: 'id' });
           if (error) console.error(`[sync]   Upsert error: ${error.message}`);
