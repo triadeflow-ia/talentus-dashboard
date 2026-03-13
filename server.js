@@ -1139,7 +1139,7 @@ app.get('/api/meta/accounts', async (req, res) => {
       limit: '50',
     });
     const accounts = (data?.data || [])
-      .filter(a => a.account_status === 1)
+      .filter(a => [1, 3].includes(a.account_status))
       .map(a => ({ id: a.id, accountId: a.account_id, name: a.name, business: a.business_name || '', currency: a.currency, amountSpent: parseInt(a.amount_spent || '0') }))
       .sort((a, b) => b.amountSpent - a.amountSpent);
     res.json({ connected: true, accounts });
