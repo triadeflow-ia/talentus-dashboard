@@ -680,7 +680,7 @@ app.get('/api/timeline', async (req, res) => {
     // Filter by seller
     if (seller && seller !== 'all') {
       allOpps = allOpps.filter(opp => {
-        const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || '';
+        const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || '';
         return vendedor.toLowerCase().includes(seller.toLowerCase());
       });
     }
@@ -742,7 +742,7 @@ app.get('/api/distribution', async (req, res) => {
 
     if (seller && seller !== 'all') {
       allOpps = allOpps.filter(opp => {
-        const vendedor = getCustomField(opp, 'vendedor') || opp.assignedTo || '';
+        const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || '';
         return vendedor.toLowerCase().includes(seller.toLowerCase());
       });
     }
