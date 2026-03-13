@@ -239,7 +239,25 @@ async function findOrCreateContact(row) {
     const created = await ghlFetch('/contacts/', { method: 'POST', body: JSON.stringify(body) });
     return created.contact?.id || null;
   } catch (e) {
-    console.log(`  ⚠️ Contact create error: ${e.message.substring(0, 100)}`);
+    // GHL returns contactId in meta when duplicate detected
+    const errText = e.message || '';
+    const metaMatch = errText.match(/"contactId"\s*:\s*"([^"]+)"/);
+    if (metaMatch && metaMatch[1]) {
+      console.log(`  ♻️ Duplicate detected, using existing contact: ${metaMatch[1]}`);
+      return metaMatch[1];
+    }
+    // Try one more search with raw phone (without +55)
+    if (phone) {
+      try {
+        const rawPhone = phone.replace(/^\+55/, '');
+        const searchRes = await ghlFetch(`/contacts/search/duplicate?locationId=${GHL_LOCATION_ID}&phone=${encodeURIComponent(rawPhone)}`);
+        if (searchRes.contact?.id) {
+          console.log(`  ♻️ Found via raw phone search: ${searchRes.contact.id}`);
+          return searchRes.contact.id;
+        }
+      } catch (e2) { /* not found */ }
+    }
+    console.log(`  ⚠️ Contact create error: ${errText.substring(0, 100)}`);
     return null;
   }
 }
