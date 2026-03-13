@@ -6,13 +6,14 @@ Integra dados de CRM (GHL), vendas e marketing em tempo real.
 Foco: receita, vendas, performance comercial, marketing.
 
 ## Status
-- **Fase atual:** v3.0 — Supabase sync + filtros periodo em TODOS endpoints CRM
+- **Fase atual:** v3.1 — Sync fix (marca via opp.contact.tags) + Meta Ads 2 contas
 - **Deploy:** LIVE Railway — https://faithful-nature-production.up.railway.app
 - **Portal TDI:** https://faithful-nature-production.up.railway.app/portal (Central de Acompanhamento)
 - **Dominio customizado:** talentus.triadeflow.ai (CNAME pendente no Cloudflare)
 - **Repo:** https://github.com/triadeflow-ia/talentus-dashboard
 - **Railway Project:** https://railway.com/project/13bee088-681c-42f5-ae04-e9e1507fe453
 - **GHL dados:** Base LIMPA — dados fake removidos, migracao Kommo PENDENTE
+- **Sync status (2026-03-13):** Sync 35 RODANDO — 5,966 contatos OK, tag map 5,958, processando pipelines. Fix opp.contact.tags deployado.
 
 ## Stack
 - **Frontend:** React 19 + Vite 6 + Tailwind v4 + Recharts + React Query + Lucide React
@@ -34,7 +35,10 @@ Foco: receita, vendas, performance comercial, marketing.
   - `meta_ads_daily` — insights diarios Meta Ads (campaign + account level)
   - `meta_ads_entities` — campanhas, adsets, ads (metadata)
   - `sync_log` — historico de sincronizacoes
-- **Status sync (2026-03-13):** GHL 0 opps (base limpa), Meta 34 entidades sincronizadas
+- **Status sync (2026-03-13):** GHL 2,535 opps (313 Comercial + 2,222 Nutricao), 5,966 contatos, Meta Ads 0 daily (sync pendente)
+- **Sync fix deployado:** opp.contact.tags como fonte primaria de marca (GHL API retorna contact.tags nas opps)
+- **Marca preenchida:** 138 opps (sync anterior) + 100 opps sync 35 (todas com marca). Sync 35 ainda em andamento.
+- **Meta Ads contas:** act_750590826052352 (Nutricao) + act_3335888230023865 (Infoprodutos) — filtradas no sync.js
 
 ## GHL Integration
 - **Location:** mOJ0iKBfMFjFxWGdvyvA (Talentus Digital)
@@ -120,12 +124,21 @@ GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 7. [x] Supabase integrado — sync.js + filtro periodo em todos endpoints + Railway vars
 8. [x] Portal TDI online — /portal corrigido (END, nao ENDI)
 9. [x] Filtros Meta Ads funcionando — contas ordenadas por gasto, KPIs respondem a filtros
-10. [ ] **EXECUTAR migracao Kommo → GHL** (7.094 leads) ← PROXIMO
-11. [ ] Criar 13 workflows no GHL (W01-W13)
-12. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
-13. [ ] Integrar Google Ads API (CPC, conversoes)
-14. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
-15. [ ] Upload fotos dos vendedores
+10. [x] Fix sync marca — opp.contact.tags como fonte primaria (deployado, sync 35 rodando)
+11. [ ] **VERIFICAR sync 35 completou** — checar marca em TODOS pipelines + Meta Ads daily
+12. [ ] **EXECUTAR migracao Kommo → GHL** (7.094 leads) ← PROXIMO
+13. [ ] **Preservar datas Kommo** — script pos-migracao p/ atualizar created_at no Supabase com "Data Criada" original
+14. [ ] Criar 13 workflows no GHL (W01-W13)
+15. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
+16. [ ] Integrar Google Ads API (CPC, conversoes)
+17. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
+18. [ ] Upload fotos dos vendedores
+
+## Problemas Conhecidos (2026-03-13)
+- **GHL rate limit 429:** Sync lento (~20-30min por run completo). Delay 2s + retry backoff.
+- **Datas todas de hoje:** Leads no GHL criados hoje. Migracao Kommo trara datas historicas.
+- **DNS talentus.triadeflow.ai:** CNAME nao configurado (token Cloudflare expirado)
+- **175 opps Comercial sem marca:** Contatos sem tags marca_mateus/marca_cyb no GHL
 
 ## Decisao: Metricas CAC/ROAS/ROI/LTV
 Essas metricas dependem de dados que AINDA NAO temos:
