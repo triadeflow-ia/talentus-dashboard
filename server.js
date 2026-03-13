@@ -319,6 +319,47 @@ function filterBySeller(opps, seller) {
   });
 }
 
+// --- Cached pipeline stages (avoid GHL API calls) ---
+const pipelineStagesCache = { data: null, timestamp: 0, ttl: 30 * 60 * 1000 }; // 30 min
+
+async function getCachedPipelineStages() {
+  const now = Date.now();
+  if (pipelineStagesCache.data && (now - pipelineStagesCache.timestamp) < pipelineStagesCache.ttl) {
+    return pipelineStagesCache.data;
+  }
+  try {
+    const pipelinesData = await ghlFetch(`/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`);
+    pipelineStagesCache.data = pipelinesData.pipelines || [];
+    pipelineStagesCache.timestamp = Date.now();
+    return pipelineStagesCache.data;
+  } catch (e) {
+    console.error('[cache] Pipeline stages fetch error:', e.message);
+    return pipelineStagesCache.data || []; // return stale data if available
+  }
+}
+
+// --- Cached contacts count (avoid GHL API calls) ---
+const contactsCountCache = { count: 0, timestamp: 0, ttl: 15 * 60 * 1000 }; // 15 min
+
+async function getCachedContactsCount() {
+  const now = Date.now();
+  if (contactsCountCache.count > 0 && (now - contactsCountCache.timestamp) < contactsCountCache.ttl) {
+    return contactsCountCache.count;
+  }
+  try {
+    const data = await ghlFetch(`/contacts/?locationId=${GHL_LOCATION_ID}&limit=1`);
+    contactsCountCache.count = data.meta?.total || data.contacts?.length || 0;
+    contactsCountCache.timestamp = Date.now();
+    return contactsCountCache.count;
+  } catch (e) {
+    console.error('[cache] Contacts count error:', e.message);
+    return contactsCountCache.count; // return stale
+  }
+}
+
+// --- Cached CRM structure (avoid 5 GHL API calls per request) ---
+const crmCache = { data: null, timestamp: 0, ttl: 60 * 60 * 1000 }; // 1 hour
+
 // --- Routes ---
 
 app.get('/api/health', (req, res) => {
@@ -346,12 +387,10 @@ app.get('/api/overview', async (req, res) => {
     const seller = req.query.seller;
     const days = req.query.days;
 
-    const [contactsData, pipelineResults] = await Promise.all([
-      ghlFetch(`/contacts/?locationId=${GHL_LOCATION_ID}&limit=1`),
+    const [totalLeads, pipelineResults] = await Promise.all([
+      getCachedContactsCount(),
       getCachedOpportunities(),
     ]);
-
-    const totalLeads = contactsData.meta?.total || contactsData.contacts?.length || 0;
 
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
@@ -391,8 +430,8 @@ app.get('/api/overview', async (req, res) => {
     let commercialFunnel = [];
     if (comercialResult) {
       const opps = filterBySeller(filterByBrand(comercialResult.opportunities, brand), seller);
-      const pipelinesData = await ghlFetch(`/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`);
-      const comercialPipeline = (pipelinesData.pipelines || []).find(p => p.id === PIPELINE_IDS.comercial);
+      const pipelines = await getCachedPipelineStages();
+      const comercialPipeline = pipelines.find(p => p.id === PIPELINE_IDS.comercial);
       if (comercialPipeline) {
         commercialFunnel = (comercialPipeline.stages || [])
           .sort((a, b) => a.position - b.position)
@@ -429,8 +468,7 @@ app.get('/api/pipelines', async (req, res) => {
     const seller = req.query.seller;
     const days = req.query.days;
 
-    const pipelinesData = await ghlFetch(`/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`);
-    const pipelines = pipelinesData.pipelines || [];
+    const pipelines = await getCachedPipelineStages();
     const pipelineIds = Object.values(PIPELINE_IDS);
     const results = [];
 
@@ -755,6 +793,12 @@ app.get('/api/project-status', (req, res) => {
 // CRM Structure
 app.get('/api/crm-structure', async (req, res) => {
   try {
+    // Use 1-hour cache to avoid 5 GHL API calls per request
+    const now = Date.now();
+    if (crmCache.data && (now - crmCache.timestamp) < crmCache.ttl) {
+      return res.json(crmCache.data);
+    }
+
     const [contactFieldsData, oppFieldsData, pipelinesData, usersData, calendarsData] = await Promise.all([
       ghlFetch(`/locations/${GHL_LOCATION_ID}/customFields`).catch(() => ({ customFields: [] })),
       ghlFetch(`/locations/${GHL_LOCATION_ID}/customFields?model=opportunity`).catch(() => ({ customFields: [] })),
@@ -763,21 +807,19 @@ app.get('/api/crm-structure', async (req, res) => {
       ghlFetch(`/calendars/?locationId=${GHL_LOCATION_ID}`).catch(() => ({ calendars: [] })),
     ]);
 
-    const contactFields = contactFieldsData.customFields || [];
-    const oppFields = oppFieldsData.customFields || [];
-    const pipelines = pipelinesData.pipelines || [];
-    const users = usersData.users || [];
-    const calendars = calendarsData.calendars || [];
-
-    res.json({
-      fields: contactFields.length + oppFields.length,
-      pipelines: pipelines.length,
+    const result = {
+      fields: (contactFieldsData.customFields || []).length + (oppFieldsData.customFields || []).length,
+      pipelines: (pipelinesData.pipelines || []).length,
       tags: 38,
-      users: users.length,
-      calendars: calendars.length,
-    });
+      users: (usersData.users || []).length,
+      calendars: (calendarsData.calendars || []).length,
+    };
+    crmCache.data = result;
+    crmCache.timestamp = Date.now();
+    res.json(result);
   } catch (error) {
     console.error('Error in /api/crm-structure:', error.message);
+    if (crmCache.data) return res.json(crmCache.data); // return stale if available
     res.status(500).json({ error: 'Failed to fetch CRM structure', details: error.message });
   }
 });
