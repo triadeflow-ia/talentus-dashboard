@@ -1,0 +1,498 @@
+{
+  "report": {
+    "mateus": {
+      "label": "Funil de Vendas Mateus",
+      "total": 5489,
+      "migraveis": 4981,
+      "pulados": 508,
+      "etapas": {
+        "Etapa de leads de entrada": 4914,
+        "Qualificação": 14,
+        "Contato inicial": 26,
+        "Negociação": 20,
+        "Apresentação": 6,
+        "Diagnóstico": 9,
+        "BASE FRIA": 500
+      },
+      "etapasMig": {
+        "Etapa de leads de entrada": 4452,
+        "Qualificação": 14,
+        "Contato inicial": 26,
+        "Negociação": 19,
+        "Apresentação": 6,
+        "Diagnóstico": 8,
+        "BASE FRIA": 456
+      },
+      "users": {
+        "(sem atribuição)": 4913,
+        "kyonaragomes@gmail.com": 52,
+        "GIlcilene Lima": 291,
+        "Lucas Rodrigues": 167,
+        "Mateus Cortez": 66
+      },
+      "usersMig": {
+        "(sem atribuição)": 4451,
+        "kyonaragomes@gmail.com": 51,
+        "GIlcilene Lima": 249,
+        "Lucas Rodrigues": 164,
+        "Mateus Cortez": 66
+      },
+      "tags": {
+        "CONSULTORA: KARLA": 18,
+        "VIRADA DIGITAL": 100,
+        "CONSULTORA: GILCILENE": 10,
+        "CONSULTOR: RODRIGUEZ": 58,
+        "Virada Digital Ingresso Diamond": 1,
+        "LINK DA BIO": 1,
+        "Virada Digital Ingresso Black": 3,
+        "MATEUS CORTEZ": 2,
+        "ANUNCIO DE TRÁFEGO": 7,
+        "Social Selling": 3,
+        "GILCILENE": 1,
+        "PARCELAMENTO": 2,
+        "MENTORIA GPS": 2,
+        "FORMAÇÃO NE": 3,
+        "KARLA": 4,
+        "ESCOLA NE": 8,
+        "renovação": 1,
+        "MENTORIA INDIVIDUAL": 2,
+        "LEAD DO INSTA": 1,
+        "LAED QUENTE": 2,
+        "fb1170517264486252": 22,
+        "fb28662768243308379": 12,
+        "PRODUTOS DE FRONT": 1,
+        "RENOVAÇÃO": 1
+      },
+      "tagsMig": {
+        "CONSULTORA: KARLA": 18,
+        "VIRADA DIGITAL": 93,
+        "CONSULTORA: GILCILENE": 10,
+        "CONSULTOR: RODRIGUEZ": 58,
+        "Virada Digital Ingresso Diamond": 1,
+        "LINK DA BIO": 1,
+        "Virada Digital Ingresso Black": 3,
+        "ANUNCIO DE TRÁFEGO": 7,
+        "Social Selling": 3,
+        "MATEUS CORTEZ": 1,
+        "PARCELAMENTO": 2,
+        "MENTORIA GPS": 2,
+        "FORMAÇÃO NE": 3,
+        "KARLA": 4,
+        "ESCOLA NE": 6,
+        "renovação": 1,
+        "MENTORIA INDIVIDUAL": 1,
+        "LEAD DO INSTA": 1,
+        "fb1170517264486252": 22,
+        "fb28662768243308379": 12,
+        "LAED QUENTE": 1,
+        "PRODUTOS DE FRONT": 1,
+        "RENOVAÇÃO": 1
+      },
+      "prods": {
+        "Virada Digital": 79,
+        "Mentoria END": 2,
+        "Mentoria Individual Mateus": 9,
+        "Virada Digital Executivo": 6,
+        "Escola Nutri Expert": 26,
+        "Formação Nutri Expert": 1,
+        "Cursos e Ebooks Nutrição": 4
+      },
+      "origens": {
+        "Tráfego Pago": 115,
+        "Instagram Mateus": 31,
+        "Base de Clientes": 13,
+        "Indicação": 14,
+        "Instagram Cybelle": 8,
+        "Tráfego Pago Whatsapp": 161,
+        "Tráfego Pago Formulário": 53,
+        "Página de Captura (wordpress)": 13
+      },
+      "vendas": 146,
+      "totalVenda": 699830,
+      "vendasMig": 135,
+      "totalVendaMig": 358307,
+      "hasPhone": 4981,
+      "hasEmail": 84,
+      "hasName": 5364,
+      "dateFrom": "2024-12-12",
+      "dateTo": "2026-12-04"
+    },
+    "cyb": {
+      "label": "Funil de Vendas CybNutri",
+      "total": 852,
+      "migraveis": 825,
+      "pulados": 27,
+      "etapas": {
+        "Etapa de leads de entrada": 577,
+        "Qualificação": 53,
+        "Primeiro Contato": 123,
+        "Call de Diagnóstico": 5,
+        "Pagamento pendente/Agendado": 14,
+        "Negociação": 19,
+        "Recuperação/ FollowUp": 61
+      },
+      "etapasMig": {
+        "Etapa de leads de entrada": 577,
+        "Qualificação": 51,
+        "Primeiro Contato": 105,
+        "Call de Diagnóstico": 5,
+        "Pagamento pendente/Agendado": 14,
+        "Negociação": 18,
+        "Recuperação/ FollowUp": 55
+      },
+      "users": {
+        "(sem atribuição)": 577,
+        "GIlcilene Lima": 116,
+        "kyonaragomes@gmail.com": 83,
+        "Mateus Cortez": 59,
+        "Lucas Rodrigues": 17
+      },
+      "usersMig": {
+        "(sem atribuição)": 577,
+        "GIlcilene Lima": 108,
+        "kyonaragomes@gmail.com": 83,
+        "Lucas Rodrigues": 10,
+        "Mateus Cortez": 47
+      },
+      "tags": {
+        "FORMAÇÃO NE": 80,
+        "CONSULTORA: GILCILENE": 110,
+        "CONSULTORA: KARLA": 83,
+        "VIRADA DIGITAL": 2,
+        "ESCOLA NE": 54,
+        "PROFISSIONAL MENTORY": 2,
+        "Social Selling": 5,
+        "RENOVAÇÃO": 9,
+        "FORTALEZA": 5,
+        "SAO PAULO": 2,
+        "GILCILENE": 38,
+        "KARLA": 1,
+        "SÃO PAULO": 1,
+        "82 cardápios": 1
+      },
+      "tagsMig": {
+        "FORMAÇÃO NE": 72,
+        "CONSULTORA: GILCILENE": 101,
+        "CONSULTORA: KARLA": 83,
+        "VIRADA DIGITAL": 2,
+        "ESCOLA NE": 45,
+        "PROFISSIONAL MENTORY": 1,
+        "Social Selling": 3,
+        "RENOVAÇÃO": 9,
+        "FORTALEZA": 5,
+        "SAO PAULO": 2,
+        "GILCILENE": 28,
+        "KARLA": 1,
+        "SÃO PAULO": 1,
+        "82 cardápios": 1
+      },
+      "prods": {
+        "Formação Nutri Expert": 131,
+        "Cursos e Ebooks Nutrição": 2,
+        "Escola Nutri Expert": 85,
+        "Profissionall Mentory": 2
+      },
+      "origens": {
+        "Tráfego Pago": 135,
+        "Instagram Escola NE": 4,
+        "Instagram Cybelle": 59,
+        "Base de Clientes": 31,
+        "Eventos e MasterClass Cyb": 1,
+        "Indicação": 1,
+        "Instagram Mateus": 1,
+        "Tráfego Pago Whatsapp": 3
+      },
+      "vendas": 213,
+      "totalVenda": 254593,
+      "vendasMig": 194,
+      "totalVendaMig": 231238,
+      "hasPhone": 824,
+      "hasEmail": 1,
+      "hasName": 835,
+      "dateFrom": "2025-01-04",
+      "dateTo": "2026-12-03"
+    },
+    "sdr": {
+      "label": "SDR - Setor de Qualificação",
+      "total": 113,
+      "migraveis": 112,
+      "pulados": 1,
+      "etapas": {
+        "Apresentação Realizada": 1,
+        "Diagnóstico Agendado": 1,
+        "FollowUp - Recuperação": 44,
+        "Etapa de leads de entrada": 66,
+        "Apresentação Agendada": 1
+      },
+      "etapasMig": {
+        "Apresentação Realizada": 1,
+        "Diagnóstico Agendado": 1,
+        "FollowUp - Recuperação": 43,
+        "Etapa de leads de entrada": 66,
+        "Apresentação Agendada": 1
+      },
+      "users": {
+        "Lucas Rodrigues": 45,
+        "(sem atribuição)": 66,
+        "GIlcilene Lima": 1,
+        "kyonaragomes@gmail.com": 1
+      },
+      "usersMig": {
+        "Lucas Rodrigues": 45,
+        "(sem atribuição)": 66,
+        "GIlcilene Lima": 1
+      },
+      "tags": {},
+      "tagsMig": {},
+      "prods": {
+        "Mentoria END": 1,
+        "Virada Digital Executivo": 2,
+        "Virada Digital": 1
+      },
+      "origens": {
+        "Indicação": 5,
+        "Base de Clientes": 1,
+        "Tráfego Pago": 5,
+        "Instagram Mateus": 3
+      },
+      "vendas": 8,
+      "totalVenda": 66446,
+      "vendasMig": 8,
+      "totalVendaMig": 66446,
+      "hasPhone": 112,
+      "hasEmail": 0,
+      "hasName": 109,
+      "dateFrom": "2025-01-07",
+      "dateTo": "2025-12-09"
+    },
+    "social": {
+      "label": "Social Selling - IG Mateus",
+      "total": 937,
+      "migraveis": 5,
+      "pulados": 932,
+      "etapas": {
+        "Conversas IG Direct": 929,
+        "Lead Conectado": 5,
+        "Reativação": 1,
+        "Primeiro contato": 2
+      },
+      "etapasMig": {
+        "Lead Conectado": 2,
+        "Conversas IG Direct": 2,
+        "Primeiro contato": 1
+      },
+      "users": {
+        "kyonaragomes@gmail.com": 921,
+        "Lucas Rodrigues": 13,
+        "GIlcilene Lima": 2,
+        "Mateus Cortez": 1
+      },
+      "usersMig": {
+        "Lucas Rodrigues": 3,
+        "GIlcilene Lima": 2
+      },
+      "tags": {
+        "GILCILENE": 2
+      },
+      "tagsMig": {
+        "GILCILENE": 1
+      },
+      "prods": {
+        "Mentoria END": 1,
+        "Virada Digital": 1
+      },
+      "origens": {
+        "Indicação": 1,
+        "Tráfego Pago": 1,
+        "Instagram Mateus": 1
+      },
+      "vendas": 1,
+      "totalVenda": 197,
+      "vendasMig": 0,
+      "totalVendaMig": 0,
+      "hasPhone": 5,
+      "hasEmail": 0,
+      "hasName": 933,
+      "dateFrom": "2025-01-09",
+      "dateTo": "2026-12-03"
+    },
+    "mateus_novo": {
+      "label": "NOVO - Funil de Vendas Mateus",
+      "total": 587,
+      "migraveis": 587,
+      "pulados": 0,
+      "etapas": {
+        "Etapa de leads de entrada": 587
+      },
+      "etapasMig": {
+        "Etapa de leads de entrada": 587
+      },
+      "users": {
+        "(sem atribuição)": 586,
+        "kyonaragomes@gmail.com": 1
+      },
+      "usersMig": {
+        "(sem atribuição)": 586,
+        "kyonaragomes@gmail.com": 1
+      },
+      "tags": {},
+      "tagsMig": {},
+      "prods": {},
+      "origens": {},
+      "vendas": 0,
+      "totalVenda": 0,
+      "vendasMig": 0,
+      "totalVendaMig": 0,
+      "hasPhone": 587,
+      "hasEmail": 0,
+      "hasName": 578,
+      "dateFrom": "2025-01-09",
+      "dateTo": "2026-07-01"
+    },
+    "cyb_formacao": {
+      "label": "NOVO - Funil de Vendas Formação",
+      "total": 590,
+      "migraveis": 584,
+      "pulados": 6,
+      "etapas": {
+        "Etapa de leads de entrada": 432,
+        "Pagamento Pendente": 6,
+        "Proposta enviada": 19,
+        "Nutrição/Breakup": 44,
+        "Qualificação": 38,
+        "Contato inicial": 32,
+        "Recuperação/Followup": 19
+      },
+      "etapasMig": {
+        "Etapa de leads de entrada": 432,
+        "Pagamento Pendente": 6,
+        "Proposta enviada": 19,
+        "Nutrição/Breakup": 43,
+        "Qualificação": 37,
+        "Contato inicial": 28,
+        "Recuperação/Followup": 19
+      },
+      "users": {
+        "(sem atribuição)": 432,
+        "GIlcilene Lima": 31,
+        "Lucas Rodrigues": 18,
+        "Mateus Cortez": 107,
+        "kyonaragomes@gmail.com": 2
+      },
+      "usersMig": {
+        "(sem atribuição)": 432,
+        "GIlcilene Lima": 31,
+        "Lucas Rodrigues": 17,
+        "Mateus Cortez": 102,
+        "kyonaragomes@gmail.com": 2
+      },
+      "tags": {
+        "ESCOLA NE": 11,
+        "CONSULTORA: GILCILENE": 1,
+        "RENOVAÇÃO": 2,
+        "GILCILENE": 52,
+        "FORMAÇÃO NE": 41,
+        "CONSULTORA: KARLA": 2,
+        "DIAGNÓSTICO": 1
+      },
+      "tagsMig": {
+        "ESCOLA NE": 10,
+        "CONSULTORA: GILCILENE": 1,
+        "RENOVAÇÃO": 2,
+        "GILCILENE": 48,
+        "FORMAÇÃO NE": 38,
+        "CONSULTORA: KARLA": 2,
+        "DIAGNÓSTICO": 1
+      },
+      "prods": {
+        "Escola Nutri Expert": 9,
+        "Formação Nutri Expert": 15,
+        "Cursos e Ebooks Nutrição": 1,
+        "Virada Digital Executivo": 1
+      },
+      "origens": {
+        "Base de Clientes": 9,
+        "Instagram Cybelle": 25,
+        "Indicação": 4,
+        "Tráfego Pago": 24
+      },
+      "vendas": 139,
+      "totalVenda": 58490,
+      "vendasMig": 133,
+      "totalVendaMig": 55708,
+      "hasPhone": 584,
+      "hasEmail": 0,
+      "hasName": 577,
+      "dateFrom": "2025-01-10",
+      "dateTo": "2026-12-01"
+    }
+  },
+  "totalLeads": 8568,
+  "totalMigraveis": 7094,
+  "totalPulados": 1474,
+  "totalVendas": 507,
+  "totalReceita": 1079556,
+  "vendasMigTotal": 470,
+  "receitaMigTotal": 711699,
+  "allTags": {
+    "CONSULTORA: KARLA": 103,
+    "VIRADA DIGITAL": 102,
+    "CONSULTORA: GILCILENE": 121,
+    "CONSULTOR: RODRIGUEZ": 58,
+    "Virada Digital Ingresso Diamond": 1,
+    "LINK DA BIO": 1,
+    "Virada Digital Ingresso Black": 3,
+    "MATEUS CORTEZ": 2,
+    "ANUNCIO DE TRÁFEGO": 7,
+    "Social Selling": 8,
+    "GILCILENE": 93,
+    "PARCELAMENTO": 2,
+    "MENTORIA GPS": 2,
+    "FORMAÇÃO NE": 124,
+    "KARLA": 5,
+    "ESCOLA NE": 73,
+    "renovação": 1,
+    "MENTORIA INDIVIDUAL": 2,
+    "LEAD DO INSTA": 1,
+    "LAED QUENTE": 2,
+    "fb1170517264486252": 22,
+    "fb28662768243308379": 12,
+    "PRODUTOS DE FRONT": 1,
+    "RENOVAÇÃO": 12,
+    "PROFISSIONAL MENTORY": 2,
+    "FORTALEZA": 5,
+    "SAO PAULO": 2,
+    "SÃO PAULO": 1,
+    "82 cardápios": 1,
+    "DIAGNÓSTICO": 1
+  },
+  "allUsers": {
+    "(sem atribuição)": 6574,
+    "kyonaragomes@gmail.com": 1060,
+    "GIlcilene Lima": 441,
+    "Lucas Rodrigues": 260,
+    "Mateus Cortez": 233
+  },
+  "allProds": {
+    "Virada Digital": 81,
+    "Mentoria END": 4,
+    "Mentoria Individual Mateus": 9,
+    "Virada Digital Executivo": 9,
+    "Escola Nutri Expert": 120,
+    "Formação Nutri Expert": 147,
+    "Cursos e Ebooks Nutrição": 7,
+    "Profissionall Mentory": 2
+  },
+  "allOrigens": {
+    "Tráfego Pago": 280,
+    "Instagram Mateus": 36,
+    "Base de Clientes": 54,
+    "Indicação": 25,
+    "Instagram Cybelle": 92,
+    "Tráfego Pago Whatsapp": 164,
+    "Tráfego Pago Formulário": 53,
+    "Página de Captura (wordpress)": 13,
+    "Instagram Escola NE": 4,
+    "Eventos e MasterClass Cyb": 1
+  }
+}
