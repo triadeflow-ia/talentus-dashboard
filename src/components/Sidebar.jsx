@@ -9,8 +9,6 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
-import logoWhite from '../assets/logo-talentus-white.png';
-
 const navItems = [
   { path: '/', label: 'Painel', icon: LayoutDashboard },
   { path: '/pipelines', label: 'Pipelines', icon: GitBranch },
@@ -42,7 +40,7 @@ export default function Sidebar({ open, onClose }) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-6 border-b border-border">
-          <img src={logoWhite} alt="Talentus" className="h-20 w-auto" />
+          <span className="text-xl font-bold text-white tracking-wide">Talentus Digital</span>
           <button
             onClick={onClose}
             className="lg:hidden text-text-muted hover:text-text p-1"
