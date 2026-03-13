@@ -6,6 +6,7 @@ import VendedoresPage from './pages/VendedoresPage';
 import ProdutosPage from './pages/ProdutosPage';
 import MarketingPage from './pages/MarketingPage';
 import PodiumPage from './pages/PodiumPage';
+import TrafegoPage from './pages/TrafegoPage';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/podium" element={<PodiumPage />} />
           <Route path="/produtos" element={<ProdutosPage />} />
           <Route path="/marketing" element={<MarketingPage />} />
+          <Route path="/trafego" element={<TrafegoPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

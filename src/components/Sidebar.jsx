@@ -6,6 +6,7 @@ import {
   Package,
   Megaphone,
   Trophy,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import logoWhite from '../assets/logo-talentus-white.png';
@@ -17,6 +18,7 @@ const navItems = [
   { path: '/podium', label: 'Podio', icon: Trophy },
   { path: '/produtos', label: 'Produtos', icon: Package },
   { path: '/marketing', label: 'Marketing', icon: Megaphone },
+  { path: '/trafego', label: 'Trafego', icon: TrendingUp },
 ];
 
 export default function Sidebar({ open, onClose }) {

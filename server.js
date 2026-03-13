@@ -15,9 +15,9 @@ const GHL_TOKEN = process.env.GHL_TOKEN;
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
 const GHL_BASE_URL = 'https://services.leadconnectorhq.com';
 
-// --- Meta Ads ---
+// --- Meta Ads (multi-account) ---
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
-const META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
+const META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID; // default account (optional)
 const META_API_VERSION = 'v21.0';
 const META_BASE_URL = `https://graph.facebook.com/${META_API_VERSION}`;
 
@@ -804,18 +804,17 @@ app.get('/api/distribution', async (req, res) => {
 });
 
 // =============================================
-// META ADS ENDPOINTS
+// =============================================
+// META ADS ENDPOINTS (multi-account)
 // =============================================
 
-// Helper: Meta API fetch
+// Helper: Meta API fetch (no account dependency)
 async function metaFetch(path, params = {}) {
-  if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
-    return null; // Not configured
-  }
+  if (!META_ACCESS_TOKEN) return null;
   const url = new URL(`${META_BASE_URL}${path}`);
   url.searchParams.set('access_token', META_ACCESS_TOKEN);
   Object.entries(params).forEach(([k, v]) => {
-    if (v) url.searchParams.set(k, v);
+    if (v != null && v !== '') url.searchParams.set(k, v);
   });
   const res = await fetch(url.toString());
   if (!res.ok) {
@@ -825,205 +824,263 @@ async function metaFetch(path, params = {}) {
   return res.json();
 }
 
-// Helper: get date range
+// Helper: date range from days
 function getDateRange(days) {
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - parseInt(days));
+  return { since: start.toISOString().split('T')[0], until: end.toISOString().split('T')[0] };
+}
+
+// Helper: extract actions from Meta insights row
+function extractActions(row) {
+  const actions = row.actions || [];
+  const costPerAction = row.cost_per_action_type || [];
+  const leads = parseInt(actions.find(a => a.action_type === 'lead')?.value || 0);
+  const purchases = parseInt(actions.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0);
+  const landingPageViews = parseInt(actions.find(a => a.action_type === 'landing_page_view')?.value || 0);
+  const linkClicks = parseInt(actions.find(a => a.action_type === 'link_click')?.value || 0);
+  const cpl = parseFloat(costPerAction.find(a => a.action_type === 'lead')?.value || 0);
+  const cpa = parseFloat(costPerAction.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0);
+  return { leads, purchases, landingPageViews, linkClicks, cpl, cpa };
+}
+
+// Helper: format insights row
+function formatInsightsRow(row) {
+  const ex = extractActions(row);
   return {
-    since: start.toISOString().split('T')[0],
-    until: end.toISOString().split('T')[0],
+    spend: parseFloat(row.spend || 0),
+    impressions: parseInt(row.impressions || 0),
+    reach: parseInt(row.reach || 0),
+    clicks: parseInt(row.clicks || 0),
+    uniqueClicks: parseInt(row.unique_clicks || 0),
+    cpc: parseFloat(row.cpc || 0),
+    cpm: parseFloat(row.cpm || 0),
+    ctr: parseFloat(row.ctr || 0),
+    frequency: parseFloat(row.frequency || 0),
+    ...ex,
   };
 }
 
-// Meta connection status
+const INSIGHTS_FIELDS = 'spend,impressions,reach,clicks,cpc,cpm,ctr,actions,cost_per_action_type,frequency,unique_clicks,cost_per_unique_click';
+
+// --- Meta: connection status ---
 app.get('/api/meta/status', (req, res) => {
-  res.json({
-    connected: !!(META_ACCESS_TOKEN && META_AD_ACCOUNT_ID),
-    adAccountId: META_AD_ACCOUNT_ID ? META_AD_ACCOUNT_ID.replace(/act_/, 'act_***') : null,
-  });
+  res.json({ connected: !!META_ACCESS_TOKEN });
 });
 
-// Meta account-level insights (KPIs)
+// --- Meta: list all ad accounts ---
+app.get('/api/meta/accounts', async (req, res) => {
+  try {
+    if (!META_ACCESS_TOKEN) return res.json({ connected: false, accounts: [] });
+    const data = await metaFetch('/me/adaccounts', {
+      fields: 'name,account_id,account_status,currency,business_name',
+      limit: '50',
+    });
+    const accounts = (data?.data || [])
+      .filter(a => a.account_status === 1) // only active
+      .map(a => ({ id: a.id, accountId: a.account_id, name: a.name, business: a.business_name || '', currency: a.currency }));
+    res.json({ connected: true, accounts });
+  } catch (error) {
+    console.error('Error in /api/meta/accounts:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Meta: account insights (KPIs) — supports multi-account ---
 app.get('/api/meta/insights', async (req, res) => {
   try {
-    if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
-      return res.json({ connected: false, data: null });
-    }
-
+    if (!META_ACCESS_TOKEN) return res.json({ connected: false, data: null });
+    const accountId = req.query.account_id || META_AD_ACCOUNT_ID;
+    if (!accountId) return res.json({ connected: true, data: null, error: 'No account selected' });
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
-    const data = await metaFetch(`/${META_AD_ACCOUNT_ID}/insights`, {
-      fields: 'spend,impressions,reach,clicks,cpc,cpm,ctr,actions,cost_per_action_type,frequency,unique_clicks,cost_per_unique_click',
+    const data = await metaFetch(`/${accountId}/insights`, {
+      fields: INSIGHTS_FIELDS,
       time_range: JSON.stringify({ since, until }),
       level: 'account',
     });
+    const row = data?.data?.[0] || {};
+    const formatted = formatInsightsRow(row);
+    formatted.costPerUniqueClick = parseFloat(row.cost_per_unique_click || 0);
+    formatted.period = { since, until, days: parseInt(days) };
 
-    const insights = data?.data?.[0] || {};
-
-    // Extract conversions from actions
-    const actions = insights.actions || [];
-    const leads = actions.find(a => a.action_type === 'lead')?.value || 0;
-    const purchases = actions.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0;
-    const landingPageViews = actions.find(a => a.action_type === 'landing_page_view')?.value || 0;
-    const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || 0;
-
-    // Extract cost per action
-    const costPerAction = insights.cost_per_action_type || [];
-    const cpl = costPerAction.find(a => a.action_type === 'lead')?.value || 0;
-    const cpa = costPerAction.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0;
-
-    res.json({
-      connected: true,
-      data: {
-        spend: parseFloat(insights.spend || 0),
-        impressions: parseInt(insights.impressions || 0),
-        reach: parseInt(insights.reach || 0),
-        clicks: parseInt(insights.clicks || 0),
-        uniqueClicks: parseInt(insights.unique_clicks || 0),
-        cpc: parseFloat(insights.cpc || 0),
-        cpm: parseFloat(insights.cpm || 0),
-        ctr: parseFloat(insights.ctr || 0),
-        frequency: parseFloat(insights.frequency || 0),
-        costPerUniqueClick: parseFloat(insights.cost_per_unique_click || 0),
-        leads: parseInt(leads),
-        purchases: parseInt(purchases),
-        landingPageViews: parseInt(landingPageViews),
-        linkClicks: parseInt(linkClicks),
-        cpl: parseFloat(cpl),
-        cpa: parseFloat(cpa),
-        period: { since, until, days: parseInt(days) },
-      },
-    });
+    res.json({ connected: true, data: formatted });
   } catch (error) {
     console.error('Error in /api/meta/insights:', error.message);
-    res.status(500).json({ error: 'Failed to fetch Meta insights', details: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Meta campaigns list with insights
+// --- Meta: campaigns with insights ---
 app.get('/api/meta/campaigns', async (req, res) => {
   try {
-    if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
-      return res.json({ connected: false, campaigns: [] });
-    }
-
+    if (!META_ACCESS_TOKEN) return res.json({ connected: false, campaigns: [] });
+    const accountId = req.query.account_id || META_AD_ACCOUNT_ID;
+    if (!accountId) return res.json({ connected: true, campaigns: [] });
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
-    // Fetch campaigns
-    const campaignsData = await metaFetch(`/${META_AD_ACCOUNT_ID}/campaigns`, {
-      fields: 'name,status,objective,daily_budget,lifetime_budget,start_time,stop_time,created_time',
-      limit: '100',
+    const campaignsData = await metaFetch(`/${accountId}/campaigns`, {
+      fields: 'name,status,objective,daily_budget,lifetime_budget,start_time,stop_time',
+      limit: '200',
       filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }]),
     });
-
     const campaigns = campaignsData?.data || [];
 
-    // Fetch insights for each campaign
-    const campaignIds = campaigns.map(c => c.id);
-    let campaignInsights = {};
-
-    if (campaignIds.length > 0) {
-      const insightsData = await metaFetch(`/${META_AD_ACCOUNT_ID}/insights`, {
-        fields: 'campaign_id,campaign_name,spend,impressions,reach,clicks,cpc,cpm,ctr,actions,cost_per_action_type,unique_clicks',
-        time_range: JSON.stringify({ since, until }),
-        level: 'campaign',
-        limit: '500',
-      });
-
-      for (const row of (insightsData?.data || [])) {
-        const actions = row.actions || [];
-        const costPerAction = row.cost_per_action_type || [];
-        const leads = actions.find(a => a.action_type === 'lead')?.value || 0;
-        const purchases = actions.find(a => a.action_type === 'purchase')?.value || 0;
-        const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || 0;
-        const cpl = costPerAction.find(a => a.action_type === 'lead')?.value || 0;
-
-        campaignInsights[row.campaign_id] = {
-          spend: parseFloat(row.spend || 0),
-          impressions: parseInt(row.impressions || 0),
-          reach: parseInt(row.reach || 0),
-          clicks: parseInt(row.clicks || 0),
-          uniqueClicks: parseInt(row.unique_clicks || 0),
-          cpc: parseFloat(row.cpc || 0),
-          cpm: parseFloat(row.cpm || 0),
-          ctr: parseFloat(row.ctr || 0),
-          leads: parseInt(leads),
-          purchases: parseInt(purchases),
-          linkClicks: parseInt(linkClicks),
-          cpl: parseFloat(cpl),
-        };
-      }
+    // Fetch campaign-level insights in one call
+    const insightsData = await metaFetch(`/${accountId}/insights`, {
+      fields: `campaign_id,campaign_name,${INSIGHTS_FIELDS}`,
+      time_range: JSON.stringify({ since, until }),
+      level: 'campaign',
+      limit: '500',
+    });
+    const insightsMap = {};
+    for (const row of (insightsData?.data || [])) {
+      insightsMap[row.campaign_id] = formatInsightsRow(row);
     }
 
-    // Merge campaigns with insights
     const result = campaigns.map(c => ({
-      id: c.id,
-      name: c.name,
-      status: c.status,
-      objective: c.objective,
+      id: c.id, name: c.name, status: c.status, objective: c.objective,
       dailyBudget: c.daily_budget ? parseFloat(c.daily_budget) / 100 : null,
-      lifetimeBudget: c.lifetime_budget ? parseFloat(c.lifetime_budget) / 100 : null,
-      startTime: c.start_time,
-      stopTime: c.stop_time,
-      createdTime: c.created_time,
-      insights: campaignInsights[c.id] || null,
+      insights: insightsMap[c.id] || null,
     }));
-
-    // Sort by spend descending
     result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
 
-    res.json({
-      connected: true,
-      campaigns: result,
-      total: result.length,
-      period: { since, until, days: parseInt(days) },
-    });
+    res.json({ connected: true, campaigns: result, total: result.length, period: { since, until } });
   } catch (error) {
     console.error('Error in /api/meta/campaigns:', error.message);
-    res.status(500).json({ error: 'Failed to fetch Meta campaigns', details: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Meta daily timeline (spend + results over time)
-app.get('/api/meta/timeline', async (req, res) => {
+// --- Meta: ad sets with insights ---
+app.get('/api/meta/adsets', async (req, res) => {
   try {
-    if (!META_ACCESS_TOKEN || !META_AD_ACCOUNT_ID) {
-      return res.json({ connected: false, timeline: [] });
-    }
-
+    if (!META_ACCESS_TOKEN) return res.json({ connected: false, adsets: [] });
+    const accountId = req.query.account_id || META_AD_ACCOUNT_ID;
+    const campaignId = req.query.campaign_id;
+    if (!accountId) return res.json({ connected: true, adsets: [] });
     const days = req.query.days || '30';
     const { since, until } = getDateRange(days);
 
-    const data = await metaFetch(`/${META_AD_ACCOUNT_ID}/insights`, {
+    // If campaign_id, fetch adsets for that campaign. Otherwise, fetch all for account.
+    const parentPath = campaignId ? `/${campaignId}/adsets` : `/${accountId}/adsets`;
+    const adsetsData = await metaFetch(parentPath, {
+      fields: 'name,status,campaign_id,daily_budget,lifetime_budget,targeting,optimization_goal',
+      limit: '200',
+    });
+    const adsets = adsetsData?.data || [];
+
+    // Insights at adset level
+    const insightsData = await metaFetch(`/${accountId}/insights`, {
+      fields: `adset_id,adset_name,${INSIGHTS_FIELDS}`,
+      time_range: JSON.stringify({ since, until }),
+      level: 'adset',
+      limit: '500',
+      ...(campaignId ? { filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: campaignId }]) } : {}),
+    });
+    const insightsMap = {};
+    for (const row of (insightsData?.data || [])) {
+      insightsMap[row.adset_id] = formatInsightsRow(row);
+    }
+
+    const result = adsets.map(a => ({
+      id: a.id, name: a.name, status: a.status, campaignId: a.campaign_id,
+      dailyBudget: a.daily_budget ? parseFloat(a.daily_budget) / 100 : null,
+      optimizationGoal: a.optimization_goal,
+      insights: insightsMap[a.id] || null,
+    }));
+    result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
+
+    res.json({ connected: true, adsets: result, total: result.length, period: { since, until } });
+  } catch (error) {
+    console.error('Error in /api/meta/adsets:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Meta: individual ads with insights ---
+app.get('/api/meta/ads', async (req, res) => {
+  try {
+    if (!META_ACCESS_TOKEN) return res.json({ connected: false, ads: [] });
+    const accountId = req.query.account_id || META_AD_ACCOUNT_ID;
+    const adsetId = req.query.adset_id;
+    if (!accountId) return res.json({ connected: true, ads: [] });
+    const days = req.query.days || '30';
+    const { since, until } = getDateRange(days);
+
+    const parentPath = adsetId ? `/${adsetId}/ads` : `/${accountId}/ads`;
+    const adsData = await metaFetch(parentPath, {
+      fields: 'name,status,adset_id,campaign_id,creative{thumbnail_url,title,body}',
+      limit: '200',
+    });
+    const ads = adsData?.data || [];
+
+    const insightsData = await metaFetch(`/${accountId}/insights`, {
+      fields: `ad_id,ad_name,${INSIGHTS_FIELDS}`,
+      time_range: JSON.stringify({ since, until }),
+      level: 'ad',
+      limit: '500',
+      ...(adsetId ? { filtering: JSON.stringify([{ field: 'adset.id', operator: 'EQUAL', value: adsetId }]) } : {}),
+    });
+    const insightsMap = {};
+    for (const row of (insightsData?.data || [])) {
+      insightsMap[row.ad_id] = formatInsightsRow(row);
+    }
+
+    const result = ads.map(a => ({
+      id: a.id, name: a.name, status: a.status, adsetId: a.adset_id, campaignId: a.campaign_id,
+      thumbnail: a.creative?.thumbnail_url || null,
+      insights: insightsMap[a.id] || null,
+    }));
+    result.sort((a, b) => (b.insights?.spend || 0) - (a.insights?.spend || 0));
+
+    res.json({ connected: true, ads: result, total: result.length, period: { since, until } });
+  } catch (error) {
+    console.error('Error in /api/meta/ads:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Meta: daily timeline (supports multi-account + campaign filter) ---
+app.get('/api/meta/timeline', async (req, res) => {
+  try {
+    if (!META_ACCESS_TOKEN) return res.json({ connected: false, timeline: [] });
+    const accountId = req.query.account_id || META_AD_ACCOUNT_ID;
+    if (!accountId) return res.json({ connected: true, timeline: [] });
+    const days = req.query.days || '30';
+    const campaignId = req.query.campaign_id;
+    const { since, until } = getDateRange(days);
+
+    const data = await metaFetch(`/${accountId}/insights`, {
       fields: 'spend,impressions,clicks,actions,reach',
       time_range: JSON.stringify({ since, until }),
       time_increment: '1',
       level: 'account',
       limit: '500',
+      ...(campaignId ? { filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: campaignId }]) } : {}),
     });
 
     const timeline = (data?.data || []).map(row => {
-      const actions = row.actions || [];
-      const leads = actions.find(a => a.action_type === 'lead')?.value || 0;
-      const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || 0;
+      const ex = extractActions(row);
       return {
         date: row.date_start,
         spend: parseFloat(row.spend || 0),
         impressions: parseInt(row.impressions || 0),
         clicks: parseInt(row.clicks || 0),
         reach: parseInt(row.reach || 0),
-        leads: parseInt(leads),
-        linkClicks: parseInt(linkClicks),
+        leads: ex.leads,
+        linkClicks: ex.linkClicks,
+        landingPageViews: ex.landingPageViews,
       };
     });
 
     res.json({ connected: true, timeline, period: { since, until, days: parseInt(days) } });
   } catch (error) {
     console.error('Error in /api/meta/timeline:', error.message);
-    res.status(500).json({ error: 'Failed to fetch Meta timeline', details: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 

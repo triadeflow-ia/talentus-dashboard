@@ -120,22 +120,31 @@ export default function MarketingPage() {
     staleTime: 300_000,
   });
 
-  const { data: insightsData, isLoading: loadingInsights } = useQuery({
-    queryKey: ['meta-insights', period],
-    queryFn: () => api.metaInsights(period),
+  const { data: accountsData } = useQuery({
+    queryKey: ['meta-accounts'],
+    queryFn: api.metaAccounts,
     enabled: !!statusData?.connected,
+    staleTime: 300_000,
+  });
+
+  const firstAccount = accountsData?.accounts?.[0]?.id || null;
+
+  const { data: insightsData, isLoading: loadingInsights } = useQuery({
+    queryKey: ['meta-insights', period, firstAccount],
+    queryFn: () => api.metaInsights(period, firstAccount),
+    enabled: !!statusData?.connected && !!firstAccount,
   });
 
   const { data: campaignsData, isLoading: loadingCampaigns } = useQuery({
-    queryKey: ['meta-campaigns', period],
-    queryFn: () => api.metaCampaigns(period),
-    enabled: !!statusData?.connected,
+    queryKey: ['meta-campaigns', period, firstAccount],
+    queryFn: () => api.metaCampaigns(period, firstAccount),
+    enabled: !!statusData?.connected && !!firstAccount,
   });
 
   const { data: timelineData } = useQuery({
-    queryKey: ['meta-timeline', period],
-    queryFn: () => api.metaTimeline(period),
-    enabled: !!statusData?.connected,
+    queryKey: ['meta-timeline', period, firstAccount],
+    queryFn: () => api.metaTimeline(period, firstAccount),
+    enabled: !!statusData?.connected && !!firstAccount,
   });
 
   const connected = statusData?.connected;

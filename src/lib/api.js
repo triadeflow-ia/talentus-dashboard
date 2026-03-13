@@ -21,9 +21,12 @@ export const api = {
   sellersList: () => fetchAPI('/sellers-list'),
   timeline: (brand, seller, days) => fetchAPI('/timeline', { brand, seller, days }),
   distribution: (brand, seller) => fetchAPI('/distribution', { brand, seller }),
-  // Meta Ads
+  // Meta Ads (multi-account)
   metaStatus: () => fetchAPI('/meta/status'),
-  metaInsights: (days) => fetchAPI('/meta/insights', { days }),
-  metaCampaigns: (days) => fetchAPI('/meta/campaigns', { days }),
-  metaTimeline: (days) => fetchAPI('/meta/timeline', { days }),
+  metaAccounts: () => fetchAPI('/meta/accounts'),
+  metaInsights: (days, accountId) => fetchAPI('/meta/insights', { days, account_id: accountId }),
+  metaCampaigns: (days, accountId) => fetchAPI('/meta/campaigns', { days, account_id: accountId }),
+  metaAdsets: (days, accountId, campaignId) => fetchAPI('/meta/adsets', { days, account_id: accountId, campaign_id: campaignId }),
+  metaAds: (days, accountId, adsetId) => fetchAPI('/meta/ads', { days, account_id: accountId, adset_id: adsetId }),
+  metaTimeline: (days, accountId, campaignId) => fetchAPI('/meta/timeline', { days, account_id: accountId, campaign_id: campaignId }),
 };
