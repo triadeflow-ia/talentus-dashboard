@@ -63,12 +63,13 @@ GET /api/distribution?brand=&seller=   — Distribuicao (status, produto, marca,
 1. [x] Deploy Railway — LIVE faithful-nature-production.up.railway.app
 2. [x] Criar repo GitHub triadeflow-ia/talentus-dashboard
 3. [ ] Configurar DNS Cloudflare — CNAME talentus → ruiw0bdj.up.railway.app (token CF expirado)
-4. [ ] Conectar Meta Ads API (token de acesso + App aprovado)
+4. [x] Conectar Meta Ads API — LIVE, token configurado, TrafegoPage + MarketingPage funcionando
 5. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
 6. [ ] Integrar Google Ads API (CPC, conversoes)
 7. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
 8. [ ] Supabase para historico + futuro IA
 9. [ ] Upload fotos dos vendedores
+10. [ ] Migrar leads Kommo → GHL (MigraFlow pronto, falta exportar CSV do Kommo)
 
 ## Decisao: Metricas CAC/ROAS/ROI/LTV
 Essas metricas dependem de dados que AINDA NAO temos:
