@@ -21,8 +21,8 @@ export default function OverviewPage() {
   const [timelineMode, setTimelineMode] = useState('daily');
 
   const { data: overview, isLoading: loadingOverview } = useQuery({
-    queryKey: ['overview', brand, seller],
-    queryFn: () => api.overview(brand, seller),
+    queryKey: ['overview', brand, seller, period],
+    queryFn: () => api.overview(brand, seller, period),
     staleTime: 300_000,
   });
 
@@ -33,8 +33,8 @@ export default function OverviewPage() {
   });
 
   const { data: distData } = useQuery({
-    queryKey: ['distribution', brand, seller],
-    queryFn: () => api.distribution(brand, seller),
+    queryKey: ['distribution', brand, seller, period],
+    queryFn: () => api.distribution(brand, seller, period),
     staleTime: 300_000,
   });
 

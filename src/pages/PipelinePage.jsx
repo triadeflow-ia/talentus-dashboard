@@ -8,11 +8,11 @@ import { SkeletonPage } from '../components/LoadingSkeleton';
 
 export default function PipelinePage() {
   const { brand } = useBrand();
-  const { seller } = useFilter();
+  const { seller, period } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['pipelines', brand, seller],
-    queryFn: () => api.pipelines(brand, seller),
+    queryKey: ['pipelines', brand, seller, period],
+    queryFn: () => api.pipelines(brand, seller, period),
     staleTime: 300_000,
   });
 

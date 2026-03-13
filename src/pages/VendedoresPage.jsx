@@ -23,11 +23,11 @@ const badgeConfig = {
 
 export default function VendedoresPage() {
   const { brand } = useBrand();
-  const { seller } = useFilter();
+  const { seller, period } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sellers', brand, seller],
-    queryFn: () => api.sellers(brand, seller),
+    queryKey: ['sellers', brand, seller, period],
+    queryFn: () => api.sellers(brand, seller, period),
     staleTime: 300_000,
   });
 

@@ -11,16 +11,16 @@ async function fetchAPI(path, params = {}) {
 }
 
 export const api = {
-  overview: (brand, seller) => fetchAPI('/overview', { brand, seller }),
-  pipelines: (brand, seller) => fetchAPI('/pipelines', { brand, seller }),
-  sellers: (brand, seller) => fetchAPI('/sellers', { brand, seller }),
-  products: (brand, seller) => fetchAPI('/products', { brand, seller }),
+  overview: (brand, seller, days) => fetchAPI('/overview', { brand, seller, days }),
+  pipelines: (brand, seller, days) => fetchAPI('/pipelines', { brand, seller, days }),
+  sellers: (brand, seller, days) => fetchAPI('/sellers', { brand, seller, days }),
+  products: (brand, seller, days) => fetchAPI('/products', { brand, seller, days }),
   projectStatus: () => fetchAPI('/project-status'),
   crmStructure: () => fetchAPI('/crm-structure'),
   health: () => fetchAPI('/health'),
   sellersList: () => fetchAPI('/sellers-list'),
   timeline: (brand, seller, days) => fetchAPI('/timeline', { brand, seller, days }),
-  distribution: (brand, seller) => fetchAPI('/distribution', { brand, seller }),
+  distribution: (brand, seller, days) => fetchAPI('/distribution', { brand, seller, days }),
   // Meta Ads (multi-account)
   metaStatus: () => fetchAPI('/meta/status'),
   metaAccounts: () => fetchAPI('/meta/accounts'),

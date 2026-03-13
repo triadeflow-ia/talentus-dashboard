@@ -21,11 +21,11 @@ const AVATAR_COLORS = ['#26428B', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#
 
 export default function PodiumPage() {
   const { brand } = useBrand();
-  const { seller } = useFilter();
+  const { seller, period } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sellers', brand, seller],
-    queryFn: () => api.sellers(brand, seller),
+    queryKey: ['sellers', brand, seller, period],
+    queryFn: () => api.sellers(brand, seller, period),
     staleTime: 300_000,
   });
 

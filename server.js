@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { startSync } from './sync.js';
 
 dotenv.config();
 
@@ -235,6 +236,17 @@ function filterByBrand(opps, brand) {
   });
 }
 
+// --- Helper: Filter opps by days (period) ---
+function filterByDays(opps, days) {
+  if (!days) return opps;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - parseInt(days));
+  return opps.filter(opp => {
+    const created = new Date(opp.createdAt || opp.dateAdded);
+    return created >= cutoff;
+  });
+}
+
 // --- Helper: Filter opps by seller ---
 function filterBySeller(opps, seller) {
   if (!seller || seller === 'all') return opps;
@@ -269,6 +281,7 @@ app.get('/api/overview', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
+    const days = req.query.days;
 
     const [contactsData, pipelineResults] = await Promise.all([
       ghlFetch(`/contacts/?locationId=${GHL_LOCATION_ID}&limit=1`),
@@ -280,10 +293,13 @@ app.get('/api/overview', async (req, res) => {
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
     allOpps = filterBySeller(allOpps, seller);
+    allOpps = filterByDays(allOpps, days);
 
     const pipelineSummary = [];
     for (const { pipelineId, opportunities } of pipelineResults) {
-      const opps = filterByBrand(opportunities, brand);
+      let opps = filterByBrand(opportunities, brand);
+      opps = filterBySeller(opps, seller);
+      opps = filterByDays(opps, days);
       const open = opps.filter(o => o.status === 'open').length;
       const won = opps.filter(o => o.status === 'won').length;
       const lost = opps.filter(o => o.status === 'lost').length;
@@ -348,6 +364,7 @@ app.get('/api/pipelines', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
+    const days = req.query.days;
 
     const pipelinesData = await ghlFetch(`/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`);
     const pipelines = pipelinesData.pipelines || [];
@@ -357,7 +374,7 @@ app.get('/api/pipelines', async (req, res) => {
     for (const pipeline of pipelines) {
       if (!pipelineIds.includes(pipeline.id)) continue;
 
-      const opps = filterBySeller(filterByBrand(await fetchAllOpportunities(pipeline.id), brand), seller);
+      const opps = filterByDays(filterBySeller(filterByBrand(await fetchAllOpportunities(pipeline.id), brand), seller), days);
 
       const stages = (pipeline.stages || [])
         .sort((a, b) => a.position - b.position)
@@ -403,10 +420,12 @@ app.get('/api/sellers', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
+    const days = req.query.days;
     const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
     allOpps = filterBySeller(allOpps, seller);
+    allOpps = filterByDays(allOpps, days);
 
     const now = new Date();
     const sellerMap = {};
@@ -591,10 +610,12 @@ app.get('/api/products', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
+    const days = req.query.days;
     const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
     allOpps = filterBySeller(allOpps, seller);
+    allOpps = filterByDays(allOpps, days);
 
     // Build product map from opportunities
     const productData = {};
@@ -786,17 +807,13 @@ app.get('/api/distribution', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
+    const days = req.query.days;
 
     const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
-
-    if (seller && seller !== 'all') {
-      allOpps = allOpps.filter(opp => {
-        const vendedor = resolveSellerName(getCustomField(opp, 'vendedor') || opp.assignedTo) || '';
-        return vendedor.toLowerCase().includes(seller.toLowerCase());
-      });
-    }
+    allOpps = filterBySeller(allOpps, seller);
+    allOpps = filterByDays(allOpps, days);
 
     // By status
     const byStatus = {};
@@ -1146,4 +1163,7 @@ app.listen(PORT, () => {
   console.log(`Talentus Dashboard API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`GHL Location: ${GHL_LOCATION_ID}`);
+
+  // Start Supabase sync in background (non-blocking)
+  startSync().catch(err => console.error('[sync] Failed to start:', err.message));
 });

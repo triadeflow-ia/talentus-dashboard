@@ -9,11 +9,11 @@ import { SkeletonPage } from '../components/LoadingSkeleton';
 
 export default function ProdutosPage() {
   const { brand } = useBrand();
-  const { seller } = useFilter();
+  const { seller, period } = useFilter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', brand, seller],
-    queryFn: () => api.products(brand, seller),
+    queryKey: ['products', brand, seller, period],
+    queryFn: () => api.products(brand, seller, period),
     staleTime: 300_000,
   });
 
