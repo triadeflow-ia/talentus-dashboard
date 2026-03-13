@@ -64,7 +64,7 @@ const SELLER_META = {
     ghlId: 'CfeKqpQX6eWKCVVwyRsQ',
   },
   'mateus cortez': {
-    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Mateus&backgroundColor=f59e0b',
+    photo: '/photos/mateus-cortez.jpg',
     role: 'CEO / Estrategista',
     email: 'mateuscortez@empresacmcdigital.com',
     ghlId: '77uDX774vmKxyMxEhfCR',
