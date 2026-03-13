@@ -6,19 +6,35 @@ Integra dados de CRM (GHL), vendas e marketing em tempo real.
 Foco: receita, vendas, performance comercial, marketing.
 
 ## Status
-- **Fase atual:** v2.1 — Cache in-memory, ROAS real (Meta Ads action_values), migracao Kommo preparada
+- **Fase atual:** v3.0 — Supabase sync + filtros periodo em TODOS endpoints CRM
 - **Deploy:** LIVE Railway — https://faithful-nature-production.up.railway.app
-- **Portal TDI:** https://talentusdigital.triadeflow.ai (Central de Acompanhamento do Projeto)
+- **Portal TDI:** https://faithful-nature-production.up.railway.app/portal (Central de Acompanhamento)
 - **Dominio customizado:** talentus.triadeflow.ai (CNAME pendente no Cloudflare)
 - **Repo:** https://github.com/triadeflow-ia/talentus-dashboard
 - **Railway Project:** https://railway.com/project/13bee088-681c-42f5-ae04-e9e1507fe453
-- **GHL dados:** Dados fake REMOVIDOS pelo cliente. Base limpa pronta para migracao real.
+- **GHL dados:** Base LIMPA — dados fake removidos, migracao Kommo PENDENTE
 
 ## Stack
 - **Frontend:** React 19 + Vite 6 + Tailwind v4 + Recharts + React Query + Lucide React
-- **Backend:** Express.js (API proxy para GHL) v2.1.0
+- **Backend:** Express.js v3.0.0 + Supabase sync
+- **Database:** Supabase PostgreSQL (5 tabelas: opportunities, contacts, meta_ads_daily, meta_ads_entities, sync_log)
+- **Sync:** GHL cada 15min, Meta Ads cada 30min (sync.js)
 - **Theme:** Dark HUD (Space Grotesk font, neon glows, scanline effects)
 - **Deploy:** Railway (faithful-nature)
+
+## Supabase Integration (v3.0)
+- **Project ID:** lhjtqgyosjhbfzipbikq
+- **URL:** https://lhjtqgyosjhbfzipbikq.supabase.co
+- **Credenciais:** Em .env (SUPABASE_URL, SUPABASE_SERVICE_KEY)
+- **Railway vars:** SUPABASE_URL + SUPABASE_SERVICE_KEY configuradas
+- **Sync module:** `sync.js` — importado pelo server.js, roda no boot
+- **Tabelas:**
+  - `opportunities` — oportunidades GHL com marca, produto, vendedor, pipeline
+  - `contacts` — contatos GHL
+  - `meta_ads_daily` — insights diarios Meta Ads (campaign + account level)
+  - `meta_ads_entities` — campanhas, adsets, ads (metadata)
+  - `sync_log` — historico de sincronizacoes
+- **Status sync (2026-03-13):** GHL 0 opps (base limpa), Meta 34 entidades sincronizadas
 
 ## GHL Integration
 - **Location:** mOJ0iKBfMFjFxWGdvyvA (Talentus Digital)
@@ -27,35 +43,37 @@ Foco: receita, vendas, performance comercial, marketing.
 - **Custom Fields usados:** Marca, Produto de Interesse, Vendedor Responsavel, Valor Fechado
 - **Usuarios GHL (5):** Gilcilene Lima, Lucas Rodrigues, Karla Yonara, Mateus Cortez, Jessica Monteiro
 
-## Funcionalidades (v2.1)
+## Funcionalidades (v3.0)
 - **Filtros globais:** Marca (Mateus/CybNutri/Todas) + Vendedor + Periodo (7/15/30/60/90 dias)
+- **Filtro Periodo:** Funciona em TODOS os endpoints CRM (overview, pipelines, sellers, products, distribution, timeline)
 - **Dashboard:** 6 KPIs + Grafico de Linha (diario/acumulado) + Funil Piramide + 3 Donuts + Taxa Conversao + Tabela Pipeline
 - **Pipelines:** 6 pipelines expandiveis com stages e contagem
 - **Vendedores:** Gamificacao (podium, badges), ticket medio, ranking, tabela completa
 - **Produtos:** Agrupados por marca, comparativo de receita
 - **Trafego:** Meta Ads conectado — CPL, CTR, ROAS real, funil de conversao
 - **Marketing:** Meta Ads LIVE (TrafegoPage + MarketingPage)
+- **Supabase Sync:** Background sync GHL (15min) + Meta (30min)
 - **Cache:** In-memory com TTL 5min e protecao thundering herd
 - **staleTime:** React Query 5min em todos os hooks
 
-## Novos Componentes (v2.0+)
-- `TimelineChart.jsx` — Grafico de area/linha com Recharts (diario + acumulado)
-- `DonutChart.jsx` — Grafico de rosca com Recharts (status, produto, vendedor)
-- `FunnelChart.jsx` — Refatorado: variante "pyramid" (topo/meio/fim) + variante "bars"
-- `FilterContext.jsx` — Context global para filtro vendedor + periodo
-- Layout com header duplo (info + filtros)
-
 ## Endpoints API
 ```
-GET /api/health                        — Status do servidor
-GET /api/overview?brand=&seller=       — KPIs agregados + funil + pipeline summary
-GET /api/pipelines?brand=&seller=      — Pipelines com stages e contagem
-GET /api/sellers?brand=&seller=        — Vendedores com gamificacao
-GET /api/products?brand=&seller=       — Produtos agrupados por marca
-GET /api/sellers-list                  — Lista de vendedores (p/ dropdown)
-GET /api/timeline?brand=&seller=&days= — Serie temporal (opps/won/lost/revenue por dia)
-GET /api/distribution?brand=&seller=   — Distribuicao (status, produto, marca, vendedor)
-POST /api/cache/clear                  — Limpar cache in-memory
+GET /api/health                                — Status do servidor
+GET /api/overview?brand=&seller=&days=         — KPIs agregados + funil + pipeline summary
+GET /api/pipelines?brand=&seller=&days=        — Pipelines com stages e contagem
+GET /api/sellers?brand=&seller=&days=          — Vendedores com gamificacao
+GET /api/products?brand=&seller=&days=         — Produtos agrupados por marca
+GET /api/sellers-list                          — Lista de vendedores (p/ dropdown)
+GET /api/timeline?brand=&seller=&days=         — Serie temporal (opps/won/lost/revenue por dia)
+GET /api/distribution?brand=&seller=&days=     — Distribuicao (status, produto, marca, vendedor)
+POST /api/cache/clear                          — Limpar cache in-memory
+GET /api/meta/status                           — Conexao Meta Ads
+GET /api/meta/accounts                         — Lista contas de anuncio
+GET /api/meta/insights?days=&account_id=       — KPIs conta Meta
+GET /api/meta/campaigns?days=&account_id=      — Campanhas com insights
+GET /api/meta/adsets?days=&account_id=&campaign_id= — Conjuntos com insights
+GET /api/meta/ads?days=&account_id=&adset_id=  — Anuncios com insights
+GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 ```
 
 ## Marcas e Produtos
@@ -78,7 +96,7 @@ POST /api/cache/clear                  — Limpar cache in-memory
 - **Comando:** `node migrate-kommo.js` (estimativa ~2.7h)
 - **Dados fake GHL:** JA REMOVIDOS pelo cliente (2026-03-13)
 
-## Portal TDI — Status das Fases (talentusdigital.triadeflow.ai)
+## Portal TDI — Status das Fases
 | Fase | Status | % |
 |------|--------|---|
 | 1. Diagnostico | COMPLETA | 100% |
@@ -99,13 +117,15 @@ POST /api/cache/clear                  — Limpar cache in-memory
 4. [x] Conectar Meta Ads API — LIVE, token configurado, TrafegoPage + MarketingPage funcionando
 5. [x] Dados fake GHL removidos pelo cliente (2026-03-13)
 6. [x] Migracao Kommo preparada — 6 planilhas analisadas, script pronto, relatorio gerado
-7. [ ] **EXECUTAR migracao Kommo → GHL** (7.094 leads) ← PROXIMO
-8. [ ] Criar 13 workflows no GHL (W01-W13)
-9. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
-10. [ ] Integrar Google Ads API (CPC, conversoes)
-11. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
-12. [ ] Supabase para historico + futuro IA
-13. [ ] Upload fotos dos vendedores
+7. [x] Supabase integrado — sync.js + filtro periodo em todos endpoints + Railway vars
+8. [x] Portal TDI online — /portal corrigido (END, nao ENDI)
+9. [x] Filtros Meta Ads funcionando — contas ordenadas por gasto, KPIs respondem a filtros
+10. [ ] **EXECUTAR migracao Kommo → GHL** (7.094 leads) ← PROXIMO
+11. [ ] Criar 13 workflows no GHL (W01-W13)
+12. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
+13. [ ] Integrar Google Ads API (CPC, conversoes)
+14. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
+15. [ ] Upload fotos dos vendedores
 
 ## Decisao: Metricas CAC/ROAS/ROI/LTV
 Essas metricas dependem de dados que AINDA NAO temos:
