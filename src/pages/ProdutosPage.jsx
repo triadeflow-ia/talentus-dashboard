@@ -14,6 +14,7 @@ export default function ProdutosPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['products', brand, seller],
     queryFn: () => api.products(brand, seller),
+    staleTime: 300_000,
   });
 
   if (isLoading) {

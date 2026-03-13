@@ -13,6 +13,7 @@ export default function PipelinePage() {
   const { data, isLoading } = useQuery({
     queryKey: ['pipelines', brand, seller],
     queryFn: () => api.pipelines(brand, seller),
+    staleTime: 300_000,
   });
 
   if (isLoading) {

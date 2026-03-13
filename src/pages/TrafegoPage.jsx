@@ -11,19 +11,16 @@ import {
 } from 'lucide-react';
 import { useFilter } from '../lib/FilterContext';
 import { api } from '../lib/api';
+import { formatBRL as fmt, formatNumber, formatPercent } from '../lib/utils';
 import ChartCard from '../components/ChartCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
 
-// --- Formatters ---
-function fmt(v) {
-  if (v == null || isNaN(v)) return 'R$ 0,00';
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-}
+// --- Formatters (compact variants) ---
 function fmtN(v) {
   if (v == null || isNaN(v)) return '0';
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
-  return new Intl.NumberFormat('pt-BR').format(v);
+  return formatNumber(v);
 }
 function fmtP(v) {
   if (v == null || isNaN(v)) return '0%';
@@ -323,7 +320,7 @@ export default function TrafegoPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <KpiCard title="Compras" value={fmtN(d.purchases)} icon={ShoppingCart} color="green" />
           <KpiCard title="Custo por Compra" value={d.cpa > 0 ? fmt(d.cpa) : '—'} icon={Receipt} color="danger" />
-          <KpiCard title="ROAS" value={d.spend > 0 && d.purchases > 0 ? `${((d.purchases * 497) / d.spend).toFixed(1)}x` : '—'} sub="Retorno sobre investimento" icon={TrendingUp} color="accent" />
+          <KpiCard title="ROAS" value={d.spend > 0 && d.purchaseValue > 0 ? `${(d.purchaseValue / d.spend).toFixed(1)}x` : '—'} sub={d.purchaseValue > 0 ? `Receita ${fmt(d.purchaseValue)}` : 'Sem dados de receita'} icon={TrendingUp} color="accent" />
           <KpiCard title="Conversao do Site" value={fmtP(siteConversion)} sub="Cliques → Leads" icon={Target} color="purple" />
           <KpiCard title="Taxa de Compra" value={d.leads > 0 ? fmtRate(d.purchases, d.leads) : '—'} sub="Lead → Compra" icon={ShoppingCart} color="green" />
         </div>

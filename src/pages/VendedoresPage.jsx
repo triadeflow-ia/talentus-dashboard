@@ -28,6 +28,7 @@ export default function VendedoresPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['sellers', brand, seller],
     queryFn: () => api.sellers(brand, seller),
+    staleTime: 300_000,
   });
 
   if (isLoading) {

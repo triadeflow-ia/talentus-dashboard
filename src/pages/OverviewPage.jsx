@@ -23,16 +23,19 @@ export default function OverviewPage() {
   const { data: overview, isLoading: loadingOverview } = useQuery({
     queryKey: ['overview', brand, seller],
     queryFn: () => api.overview(brand, seller),
+    staleTime: 300_000,
   });
 
   const { data: timelineData } = useQuery({
     queryKey: ['timeline', brand, seller, period],
     queryFn: () => api.timeline(brand, seller, period),
+    staleTime: 300_000,
   });
 
   const { data: distData } = useQuery({
     queryKey: ['distribution', brand, seller],
     queryFn: () => api.distribution(brand, seller),
+    staleTime: 300_000,
   });
 
   if (loadingOverview) {

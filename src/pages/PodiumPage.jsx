@@ -26,6 +26,7 @@ export default function PodiumPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['sellers', brand, seller],
     queryFn: () => api.sellers(brand, seller),
+    staleTime: 300_000,
   });
 
   if (isLoading) return <SkeletonPage cards={3} charts={1} />;

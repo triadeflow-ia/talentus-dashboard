@@ -10,19 +10,15 @@ import {
 } from 'lucide-react';
 import { useFilter } from '../lib/FilterContext';
 import { api } from '../lib/api';
+import { formatBRL as formatCurrency, formatNumber } from '../lib/utils';
 import ChartCard from '../components/ChartCard';
 import { SkeletonPage } from '../components/LoadingSkeleton';
-
-function formatCurrency(value) {
-  if (value == null || isNaN(value)) return 'R$ 0,00';
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-}
 
 function formatCompact(value) {
   if (value == null || isNaN(value)) return '0';
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return new Intl.NumberFormat('pt-BR').format(value);
+  return formatNumber(value);
 }
 
 function formatPct(value) {

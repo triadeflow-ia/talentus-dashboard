@@ -106,8 +106,44 @@ const BRAND_PRODUCTS = {
   },
 };
 
+// --- Startup validation ---
+if (!GHL_TOKEN) console.warn('⚠️  GHL_TOKEN not set — GHL endpoints will fail');
+if (!GHL_LOCATION_ID) console.warn('⚠️  GHL_LOCATION_ID not set — GHL endpoints will fail');
+if (!META_ACCESS_TOKEN) console.warn('ℹ️  META_ACCESS_TOKEN not set — Meta Ads disabled');
+
+// --- In-memory cache for GHL data (avoid redundant API calls) ---
+const cache = {
+  data: null,
+  timestamp: 0,
+  ttl: 5 * 60 * 1000, // 5 minutes
+  fetching: null,
+};
+
+async function getCachedOpportunities() {
+  const now = Date.now();
+  if (cache.data && (now - cache.timestamp) < cache.ttl) {
+    return cache.data;
+  }
+  // Prevent thundering herd — reuse in-flight request
+  if (cache.fetching) return cache.fetching;
+  cache.fetching = fetchAllPipelineOpportunities().then(results => {
+    cache.data = results;
+    cache.timestamp = Date.now();
+    cache.fetching = null;
+    return results;
+  }).catch(err => {
+    cache.fetching = null;
+    throw err;
+  });
+  return cache.fetching;
+}
+
 // --- Middleware ---
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://talentus.triadeflow.ai', 'https://faithful-nature-production.up.railway.app']
+    : true,
+}));
 app.use(express.json());
 
 // Serve static photos (seller avatars)
@@ -210,10 +246,19 @@ function filterBySeller(opps, seller) {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '1.1.0',
+    version: '2.1.0',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development',
+    cache: { age: cache.data ? Math.round((Date.now() - cache.timestamp) / 1000) : null },
   });
+});
+
+// Force cache refresh
+app.post('/api/cache/clear', (req, res) => {
+  cache.data = null;
+  cache.timestamp = 0;
+  cache.fetching = null;
+  res.json({ cleared: true });
 });
 
 // Overview — aggregated KPIs
@@ -224,7 +269,7 @@ app.get('/api/overview', async (req, res) => {
 
     const [contactsData, pipelineResults] = await Promise.all([
       ghlFetch(`/contacts/?locationId=${GHL_LOCATION_ID}&limit=1`),
-      fetchAllPipelineOpportunities(),
+      getCachedOpportunities(),
     ]);
 
     const totalLeads = contactsData.meta?.total || contactsData.contacts?.length || 0;
@@ -355,7 +400,7 @@ app.get('/api/sellers', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
-    const pipelineResults = await fetchAllPipelineOpportunities();
+    const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
     allOpps = filterBySeller(allOpps, seller);
@@ -543,7 +588,7 @@ app.get('/api/products', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
-    const pipelineResults = await fetchAllPipelineOpportunities();
+    const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
     allOpps = filterBySeller(allOpps, seller);
@@ -653,7 +698,7 @@ app.get('/api/crm-structure', async (req, res) => {
 // Sellers list (for dropdown filter)
 app.get('/api/sellers-list', async (req, res) => {
   try {
-    const pipelineResults = await fetchAllPipelineOpportunities();
+    const pipelineResults = await getCachedOpportunities();
     const allOpps = pipelineResults.flatMap(r => r.opportunities);
 
     const sellerNames = new Set();
@@ -676,7 +721,7 @@ app.get('/api/timeline', async (req, res) => {
     const seller = req.query.seller;
     const days = parseInt(req.query.days) || 30;
 
-    const pipelineResults = await fetchAllPipelineOpportunities();
+    const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
 
@@ -739,7 +784,7 @@ app.get('/api/distribution', async (req, res) => {
     const brand = req.query.brand;
     const seller = req.query.seller;
 
-    const pipelineResults = await fetchAllPipelineOpportunities();
+    const pipelineResults = await getCachedOpportunities();
     let allOpps = pipelineResults.flatMap(r => r.opportunities);
     allOpps = filterByBrand(allOpps, brand);
 
@@ -835,14 +880,16 @@ function getDateRange(days) {
 // Helper: extract actions from Meta insights row
 function extractActions(row) {
   const actions = row.actions || [];
+  const actionValues = row.action_values || [];
   const costPerAction = row.cost_per_action_type || [];
   const leads = parseInt(actions.find(a => a.action_type === 'lead')?.value || 0);
   const purchases = parseInt(actions.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0);
+  const purchaseValue = parseFloat(actionValues.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0);
   const landingPageViews = parseInt(actions.find(a => a.action_type === 'landing_page_view')?.value || 0);
   const linkClicks = parseInt(actions.find(a => a.action_type === 'link_click')?.value || 0);
   const cpl = parseFloat(costPerAction.find(a => a.action_type === 'lead')?.value || 0);
   const cpa = parseFloat(costPerAction.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value || 0);
-  return { leads, purchases, landingPageViews, linkClicks, cpl, cpa };
+  return { leads, purchases, purchaseValue, landingPageViews, linkClicks, cpl, cpa };
 }
 
 // Helper: format insights row
@@ -862,7 +909,7 @@ function formatInsightsRow(row) {
   };
 }
 
-const INSIGHTS_FIELDS = 'spend,impressions,reach,clicks,cpc,cpm,ctr,actions,cost_per_action_type,frequency,unique_clicks,cost_per_unique_click';
+const INSIGHTS_FIELDS = 'spend,impressions,reach,clicks,cpc,cpm,ctr,actions,action_values,cost_per_action_type,frequency,unique_clicks,cost_per_unique_click';
 
 // --- Meta: connection status ---
 app.get('/api/meta/status', (req, res) => {
