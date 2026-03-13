@@ -45,19 +45,19 @@ const PIPELINE_NAMES = {
 // Kyonara=CfeKqpQX6eWKCVVwyRsQ, Mateus=77uDX774vmKxyMxEhfCR, Jessica=W4iYpPWuyc1lVnfyIKa5
 const SELLER_META = {
   'lucas rodrigues': {
-    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Lucas&backgroundColor=26428B',
+    photo: '/photos/lucas-rodrigues.jpg',
     role: 'Vendedor',
     email: 'profissional.lucasrodrigues@gmail.com',
     ghlId: '9AXuakmsPmncaaojIyGw',
   },
   'gilcilene lima': {
-    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Gilcilene&backgroundColor=10b981',
+    photo: '/photos/gilcilene-lima.jpg',
     role: 'Vendedora',
     email: 'gilcilenelimaadm25@gmail.com',
     ghlId: '2Z0eH6IjgWDqUw5b4fqS',
   },
   'kyonara gomes': {
-    photo: 'https://api.dicebear.com/9.x/notionists/svg?seed=Kyonara&backgroundColor=8b5cf6',
+    photo: '/photos/kyonara-gomes.jpg',
     role: 'Vendedora',
     email: 'kyonaragomes@gmail.com',
     ghlId: 'CfeKqpQX6eWKCVVwyRsQ',
@@ -109,6 +109,9 @@ const BRAND_PRODUCTS = {
 // --- Middleware ---
 app.use(cors());
 app.use(express.json());
+
+// Serve static photos (seller avatars)
+app.use('/photos', express.static(path.join(__dirname, 'public', 'photos')));
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
