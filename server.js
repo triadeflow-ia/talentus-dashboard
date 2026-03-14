@@ -869,13 +869,15 @@ app.get('/api/products', async (req, res) => {
       }
     }
 
-    // Group into brand structure
+    // Group into brand structure — filter by marca of the opp, not just product name
     const brands = Object.entries(BRAND_PRODUCTS).map(([brandName, brandInfo]) => {
       const products = brandInfo.products.map(prodName => {
-        // Find matching product data
+        // Find matching product data FOR THIS BRAND (by marca)
         const match = Object.values(productData).find(
-          p => p.name.toLowerCase() === prodName.toLowerCase()
+          p => p.brand === brandName && (
+            p.name.toLowerCase() === prodName.toLowerCase()
             || p.name.toLowerCase().includes(prodName.toLowerCase().split(' ')[0])
+          )
         );
         return {
           name: prodName,
