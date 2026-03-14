@@ -134,12 +134,23 @@ async function getOpportunitiesFromSupabase() {
   const sb = getSupabase();
   if (!sb) return null;
 
-  const { data, error } = await sb.from('opportunities').select('*');
-  if (error) {
-    console.error('[supabase] Read error:', error.message);
-    return null;
+  // Supabase REST returns max 1000 rows per request — paginate to get all
+  let allData = [];
+  let from = 0;
+  const PAGE_SIZE = 1000;
+  while (true) {
+    const { data, error } = await sb.from('opportunities').select('*').range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      console.error('[supabase] Read error:', error.message);
+      return allData.length > 0 ? null : null;
+    }
+    if (!data || data.length === 0) break;
+    allData = allData.concat(data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
-  if (!data || data.length === 0) return null;
+  if (allData.length === 0) return null;
+  const data = allData;
 
   // Group by pipeline_id and convert to GHL-like format
   const pipelineMap = {};
