@@ -1,0 +1,209 @@
+
+================================================================
+  AUDITORIA COMPLETA: KOMMO vs SUPABASE vs GHL
+  Data: 2026-03-13T23:06:58.946Z
+================================================================
+
+
+=== 1. DADOS FONTE (KOMMO XLSX) ===
+
+  kommo.xlsx (mateus):
+    Total: 5489 | Com contato: 4981 | Sem contato: 508
+    Vendas: 146 (R$ 699.830,00)
+    Marca: Mateus 5453 | CybNutri 36
+  kommo2.xlsx (cyb):
+    Total: 852 | Com contato: 824 | Sem contato: 28
+    Vendas: 213 (R$ 254.593,00)
+    Marca: Mateus 0 | CybNutri 852
+  kommo3.xlsx (sdr):
+    Total: 113 | Com contato: 112 | Sem contato: 1
+    Vendas: 8 (R$ 66.446,00)
+    Marca: Mateus 113 | CybNutri 0
+  kommo4.xlsx (social):
+    Total: 937 | Com contato: 5 | Sem contato: 932
+    Vendas: 1 (R$ 197,00)
+    Marca: Mateus 937 | CybNutri 0
+  kommo5.xlsx (mateus_novo):
+    Total: 587 | Com contato: 587 | Sem contato: 0
+    Vendas: 0 (R$ 0,00)
+    Marca: Mateus 587 | CybNutri 0
+  kommo6.xlsx (cyb_formacao):
+    Total: 590 | Com contato: 584 | Sem contato: 6
+    Vendas: 139 (R$ 58.490,00)
+    Marca: Mateus 0 | CybNutri 590
+
+  TOTAIS KOMMO:
+    Total leads: 8568
+    Com contato (migraveis): 7093
+    Sem contato (nao-migraveis): 1475
+    Com venda: 507 (R$ 1.079.556,00)
+    Marca Mateus: 7090 | Marca CybNutri: 1478
+
+
+=== 2. ESTADO ATUAL (SUPABASE) ===
+
+  Opportunities: 0
+  Contacts: 5966
+  Meta Ads Daily: 636
+  Meta Ads Entities: 1234
+
+  Opportunities por status:
+
+  Opportunities por pipeline:
+
+  Opportunities por marca:
+
+  Marca: 0 preenchida | 0 vazia
+  Won: 0 deals (R$ 0,00)
+  Valor total todas opps: R$ 0,00)
+
+  Contacts:
+    Com tags: 5958
+    Com phone: 5966
+    Com email: 80
+
+  Contact marca tags:
+    marca_mateus: 4866
+    marca_cyb: 1092
+    AMBAS marcas: 0
+    SEM marca: 8
+
+
+=== 3. CHECKPOINT MIGRACAO ===
+
+  Index: 8568 / Total leads
+  Sucesso: 530
+  Duplicados: 6475
+  Pulados (sem contato): 1553
+  Erros: 10
+  Total processado: 8568
+  Timestamp: 2026-03-13T14:39:44.524Z
+
+
+=== 4. CRUZAMENTO KOMMO ↔ SUPABASE ===
+
+  Leads Kommo com contato: 7093
+  Encontrados no Supabase: 7092 (100.0%)
+  NAO encontrados no Supabase: 1
+  Contatos unicos matchados: 5966
+  Contatos Supabase sem match Kommo: 0
+
+  Amostras NAO encontrados no Supabase (1):
+    - 85 8673-617 | fonte: mateus | tel: 858673617 | email: -
+
+
+=== 5. AUDITORIA DE MARCA ===
+
+  Marca CORRETA (tag GHL = esperado Kommo): 6801
+  Marca ERRADA (tag GHL ≠ esperado Kommo): 282
+  Marca AUSENTE (sem tag marca no contato): 9
+
+  Amostras marca ERRADA (20):
+    - Ariany Costa | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: 16I1e10y24LfzzHj3LTJ
+    - Luciana Campelo | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: 9OVvtkknzkFQAQMW1pNa
+    - Danielle Nutricionista | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: uTxvO5c1h1jSMNjPvqnK
+    - Marcela Almeida | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: jisSjLyWKSObhzMhKh0m
+    - EMIVE SEG - BMVAGAS NOBRE | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: G0SDdLz4a0anK8nXkvji
+    - Victor Dorneles Nutricionista | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: v0DIzHwFkBeKokezDQlw
+    - 5521969408819 | fonte: mateus | esperado: cyb | atual: marca_mateus | contactId: lPhQwWqlUiTJUXyxbeLq
+    - 558897142949 | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: Rv5jPsPfA86W1cyewaJz
+    - Layna Pavelkonski - Nutricionista Clínica | fonte: mateus | esperado: cyb | atual: marca_mateus | contactId: 7AFI8w022tE26NxIaEh8
+    - Viviane Santos | fonte: mateus | esperado: mateus | atual: marca_cyb | contactId: 65WkiYwDK4hoMtWJUI8G
+    - Tâmara | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: BZSOa7xmDPJJCnoLPXg4
+    - Madala Ateliê de Moda | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: 6d268JAon2SWJuK9zovx
+    - Rose Moreira | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: 6FmGFgpLkRfj6BMWBNhY
+    - Pedro Antônio (Feijão) | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: nqV1WdIM4DxYGjzi3ZGr
+    - Mariana Rodrigues | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: B9rvM8E7COFp9Aa0Wjs2
+    - Cyb | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: FDntiQG2jFCL626N1jLB
+    - Nutricionista Dra Dionéia Evaldt | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: iuqgXvVvxxFUCUMDtNXc
+    - Kerolin Rosa | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: wF47PgTMRPGcYtp0GRb6
+    - Carolina Costa | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: F4lWPwoSGMdaAV6FJClv
+    - Duarte Janakelle | fonte: cyb | esperado: cyb | atual: marca_mateus | contactId: rCy44YnlRIoEtBHwMelZ
+
+
+=== 5b. AUDITORIA OPP.MARCA vs CONTACT.TAGS ===
+
+  Opp.marca ALINHADA com contact.tags: 0
+  Opp.marca DIVERGENTE de contact.tags: 0
+  Opp sem contato correspondente: 0
+
+
+=== 6. AUDITORIA DE DATAS ===
+
+  Opps com data de HOJE (2026-03-13): 0
+  Opps com data HISTORICA (antes de hoje): 0
+  Data mais antiga: null
+  Data mais recente: null
+
+  Distribuicao por mes:
+
+  Contacts com data de HOJE: 5966
+  Contacts com data HISTORICA: 0
+
+
+=== 7. ANALISE DE DUPLICATAS ===
+
+  Telefones que aparecem em MULTIPLAS planilhas: 478
+  Emails que aparecem em MULTIPLAS planilhas: 0
+  Conflitos de marca (mesmo telefone, fontes diferentes): 256
+
+  Amostras conflito marca cross-source:
+    - Mateus Cortez | tel: 3182278787 | fontes: mateus, sdr, cyb_formacao | marca: mateus vs cyb
+    - Nancy Drumond | tel: 3188326828 | fontes: mateus, cyb_formacao | marca: mateus vs cyb
+    - Jonathan Vieira | tel: 3191930231 | fontes: mateus, cyb_formacao | marca: mateus vs cyb
+    - Viviane Cota | tel: 3194203312 | fontes: mateus, cyb | marca: mateus vs cyb
+    - Paola Mourthé | tel: 3194359967 | fontes: mateus, cyb_formacao | marca: mateus vs cyb
+    - Lead #5181484 | tel: 3197793788 | fontes: mateus, cyb_formacao | marca: mateus vs cyb
+    - Roberta Leane Nutri | tel: 3198661158 | fontes: mateus, cyb_formacao | marca: mateus vs cyb
+    - Larissa Prates | tel: 3199660993 | fontes: mateus, cyb | marca: mateus vs cyb
+    - Luana Oliveira | Nutricionista | tel: 3284582236 | fontes: mateus, cyb | marca: mateus vs cyb
+    - Fernanda | tel: 3288013346 | fontes: mateus, cyb_formacao | marca: mateus vs cyb
+
+  Opps por contato:
+    1 opp: 0 contatos
+    2 opps: 0 contatos
+    3+ opps: 0 contatos
+    0 opps (contato sem opp): 5966 contatos
+
+
+=== 8. AUDITORIA DE VALORES ===
+
+  Kommo vendas por fonte:
+    mateus: 146 vendas, R$ 699.830,00
+    cyb: 213 vendas, R$ 254.593,00
+    sdr: 8 vendas, R$ 66.446,00
+    social: 1 vendas, R$ 197,00
+    cyb_formacao: 139 vendas, R$ 58.490,00
+
+  Supabase:
+    Won deals: 0
+    Valor won: R$ 0,00
+    Valor total (todas): R$ 0,00
+
+
+=== 9. SYNC LOG (ultimos 20) ===
+
+
+
+=== 10. PROBLEMAS DETECTADOS ===
+
+  [CRITICO] 282 contatos com marca ERRADA no GHL (tag marca diverge do esperado pela fonte Kommo)
+  [MEDIO] 9 contatos SEM tag de marca no GHL
+  [INFO] 1 leads Kommo com contato NAO encontrados no Supabase
+  [CRITICO] 256 contatos aparecem em multiplas planilhas com marca CONFLITANTE (causa raiz do bug CybNutri)
+  [VERIFICAR] Kommo tem 507 leads com venda, Supabase tem 0 won deals — diferenca de 507
+
+
+=== 11. RESUMO FINAL ===
+
+  KOMMO FONTE: 8568 leads (7093 migraveis)
+  MIGRACAO: 530 criados + 6475 duplicados + 1553 pulados + 10 erros = 8568
+  SUPABASE: 0 opps | 5966 contatos | 636 meta daily | 1234 meta entities
+  MARCA: 0/0 opps com marca (NaN%)
+  DATAS: 0 historicas | 0 de hoje
+  CROSS-SOURCE CONFLICTS: 256 contatos com marca conflitante entre planilhas
+  PROBLEMAS: 5 (2 criticos)
+
+================================================================
+  FIM DA AUDITORIA
+================================================================
