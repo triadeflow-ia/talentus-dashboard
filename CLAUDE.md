@@ -6,14 +6,14 @@ Integra dados de CRM (GHL), vendas e marketing em tempo real.
 Foco: receita, vendas, performance comercial, marketing.
 
 ## Status
-- **Fase atual:** v3.1 — Sync fix (marca via opp.contact.tags) + Meta Ads 2 contas
+- **Fase atual:** v3.2 — Dados reais completos (Kommo migrado, datas historicas, marca 99.9%, Meta Ads 2 contas)
 - **Deploy:** LIVE Railway — https://faithful-nature-production.up.railway.app
 - **Portal TDI:** https://faithful-nature-production.up.railway.app/portal (Central de Acompanhamento)
 - **Dominio customizado:** talentus.triadeflow.ai (CNAME pendente no Cloudflare)
 - **Repo:** https://github.com/triadeflow-ia/talentus-dashboard
 - **Railway Project:** https://railway.com/project/13bee088-681c-42f5-ae04-e9e1507fe453
-- **GHL dados:** Base LIMPA — dados fake removidos, migracao Kommo PENDENTE
-- **Sync status (2026-03-13):** Sync 35 RODANDO — 5,966 contatos OK, tag map 5,958, processando pipelines. Fix opp.contact.tags deployado.
+- **GHL dados:** Base REAL — Kommo migrado (530 leads), datas historicas aplicadas, marca preenchida
+- **Sync status (2026-03-13):** 2,535 opps (99.9% com marca), 5,966 contatos, 636 Meta Ads daily, R$409K receita
 
 ## Stack
 - **Frontend:** React 19 + Vite 6 + Tailwind v4 + Recharts + React Query + Lucide React
@@ -35,10 +35,12 @@ Foco: receita, vendas, performance comercial, marketing.
   - `meta_ads_daily` — insights diarios Meta Ads (campaign + account level)
   - `meta_ads_entities` — campanhas, adsets, ads (metadata)
   - `sync_log` — historico de sincronizacoes
-- **Status sync (2026-03-13):** GHL 2,535 opps (313 Comercial + 2,222 Nutricao), 5,966 contatos, Meta Ads 0 daily (sync pendente)
+- **Status sync (2026-03-13):** 2,535 opps (2,533 com marca = 99.9%), 5,966 contatos, 636 Meta Ads daily, 1,234 entities
 - **Sync fix deployado:** opp.contact.tags como fonte primaria de marca (GHL API retorna contact.tags nas opps)
-- **Marca preenchida:** 138 opps (sync anterior) + 100 opps sync 35 (todas com marca). Sync 35 ainda em andamento.
-- **Meta Ads contas:** act_750590826052352 (Nutricao) + act_3335888230023865 (Infoprodutos) — filtradas no sync.js
+- **Marca preenchida:** 2,533/2,535 opps com marca (99.9%) — atualizado diretamente via Supabase (contact.tags → opp.marca)
+- **Datas historicas:** Kommo "Data Criada" aplicada a 2,535 opps + 5,966 contatos (range: Dez 2024 → Mar 2026)
+- **Meta Ads contas:** act_750590826052352 (Nutricao) + act_3335888230023865 (Infoprodutos) — 636 daily records, R$32,721 spend
+- **Meta Ads entities:** 1,234 entidades (campanhas, adsets, ads) sincronizadas
 
 ## GHL Integration
 - **Location:** mOJ0iKBfMFjFxWGdvyvA (Talentus Digital)
@@ -88,17 +90,15 @@ GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 - Lucas Rodrigues, Gilcilene Lima, Karla Yonara (vendedores)
 - Mateus Cortez (CEO), Jessica Monteiro, Davi (Sucesso do Cliente)
 
-## Migracao Kommo → GHL (PREPARADA — PENDENTE EXECUCAO)
+## Migracao Kommo → GHL (CONCLUIDA)
 - **6 planilhas Kommo:** kommo.xlsx a kommo6.xlsx
-- **Total:** 8.568 leads (7.094 migraveis, 1.474 sem telefone/email)
-- **Receita:** R$ 1.079.556 total (R$ 711.699 migravel)
-- **Funis:** Mateus (5.489), CybNutri (852), SDR (113), Social IG (937), Mateus Novo (587), CybNutri Formacao (590)
-- **Destino:** Pipeline Nutricao (entrada/reativacao) + Pipeline Comercial (etapas ativas + won)
-- **23 tags** mapeadas, **4 custom fields**, **5 vendedores** com atribuicao preservada
-- **Script:** `migrate-kommo.js` (dry-run validado, checkpoint/resume)
-- **Relatorio:** `RELATORIO-MIGRACAO-KOMMO-GHL.md`
-- **Comando:** `node migrate-kommo.js` (estimativa ~2.7h)
-- **Dados fake GHL:** JA REMOVIDOS pelo cliente (2026-03-13)
+- **Total:** 8.568 leads processados → 530 criados, 6.475 duplicados, 1.553 skipped, 10 erros
+- **Receita total:** R$ 409.115 (138 won deals)
+- **Script:** `migrate-kommo.js` (checkpoint completo)
+- **Datas historicas:** `fix-kommo-dates.js` — 7.092/7.093 matched, 2.535 opps + 5.966 contatos atualizados
+- **Marca:** Atualizada diretamente no Supabase via contact.tags (2.533/2.535 = 99.9%)
+- **Meta Ads:** `run-meta-sync.js` — 636 daily records + 1.234 entities de 2 contas (90 dias)
+- **Issue pendente:** CybNutri com apenas 52 opps (esperado ~1000+) — tags sobrescritas durante migracao sequencial
 
 ## Portal TDI — Status das Fases
 | Fase | Status | % |
@@ -120,25 +120,41 @@ GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 3. [ ] Configurar DNS Cloudflare — CNAME talentus → ruiw0bdj.up.railway.app (token CF expirado)
 4. [x] Conectar Meta Ads API — LIVE, token configurado, TrafegoPage + MarketingPage funcionando
 5. [x] Dados fake GHL removidos pelo cliente (2026-03-13)
-6. [x] Migracao Kommo preparada — 6 planilhas analisadas, script pronto, relatorio gerado
+6. [x] Migracao Kommo executada — 530 criados, 6.475 duplicados, checkpoint completo
 7. [x] Supabase integrado — sync.js + filtro periodo em todos endpoints + Railway vars
 8. [x] Portal TDI online — /portal corrigido (END, nao ENDI)
 9. [x] Filtros Meta Ads funcionando — contas ordenadas por gasto, KPIs respondem a filtros
-10. [x] Fix sync marca — opp.contact.tags como fonte primaria (deployado, sync 35 rodando)
-11. [ ] **VERIFICAR sync 35 completou** — checar marca em TODOS pipelines + Meta Ads daily
-12. [ ] **EXECUTAR migracao Kommo → GHL** (7.094 leads) ← PROXIMO
-13. [ ] **Preservar datas Kommo** — script pos-migracao p/ atualizar created_at no Supabase com "Data Criada" original
-14. [ ] Criar 13 workflows no GHL (W01-W13)
-15. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
-16. [ ] Integrar Google Ads API (CPC, conversoes)
-17. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
-18. [ ] Upload fotos dos vendedores
+10. [x] Fix sync marca — 99.9% opps com marca (atualizado direto no Supabase)
+11. [x] Datas historicas Kommo — fix-kommo-dates.js aplicou "Data Criada" em 2,535 opps + 5,966 contatos
+12. [x] Meta Ads sincronizado — 636 daily records + 1,234 entities (90 dias, 2 contas, R$32K spend)
+13. [x] Auditoria completa Kommo vs Supabase — AUDITORIA-KOMMO-SUPABASE.md
+14. [ ] **DECISAO MATEUS: Separar funis por marca** — Mateus e CybNutri terao pipelines proprios ← PROXIMO
+15. [ ] **Reconciliar marca CybNutri** — 282 contatos com tag errada, 52 opps (esperado ~1000+)
+16. [ ] **Fix sync.js** — rate limit (2s→5s), nao sobrescrever created_at antigo
+17. [ ] Criar novos pipelines GHL (Comercial Mateus + Comercial CybNutri)
+18. [ ] Mover opps para pipelines corretos baseado na marca
+19. [ ] Atualizar sync.js + dashboard para novos pipelines
+20. [ ] Criar 13 workflows no GHL (W01-W13)
+21. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
+22. [ ] Integrar Google Ads API (CPC, conversoes)
+23. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
+24. [ ] Upload fotos dos vendedores
+
+## Auditoria Completa (2026-03-13)
+- **Relatorio:** `AUDITORIA-KOMMO-SUPABASE.md` — cruzamento dos 6 xlsx Kommo vs Supabase
+- **Matching:** 7.092/7.093 leads Kommo encontrados no Supabase (99.99%)
+- **Datas historicas:** 2.435/2.535 opps (96%) com datas Kommo originais
+- **Deduplicacao:** 6.475 duplicados tratados corretamente
+- **Script auditoria:** `audit-kommo-vs-supabase.js` (reexecutavel)
 
 ## Problemas Conhecidos (2026-03-13)
-- **GHL rate limit 429:** Sync lento (~20-30min por run completo). Delay 2s + retry backoff.
-- **Datas todas de hoje:** Leads no GHL criados hoje. Migracao Kommo trara datas historicas.
+- **[CRITICO] CybNutri subcontagem:** Apenas 52 opps (esperado ~1000+). 256 contatos cross-source com marca conflitante. Script reconciliacao NECESSARIO.
+- **[CRITICO] GHL sync Railway FALHANDO:** 10 ultimos syncs GHL todos erraram (429 rate limit). Sync periodico NAO funciona.
+- **[CRITICO] 282 contatos com tag marca ERRADA** no GHL (sobrescrita pela migracao sequencial)
+- **[MEDIO] sync.js sobrescreve contact.created_at** — todos 5.966 contatos com data de hoje
+- **[MEDIO] 100 opps com data de hoje** — 5 sao membros equipe, 95 sem match Kommo
 - **DNS talentus.triadeflow.ai:** CNAME nao configurado (token Cloudflare expirado)
-- **175 opps Comercial sem marca:** Contatos sem tags marca_mateus/marca_cyb no GHL
+- **2 opps sem marca:** 2/2,535 (0.1%)
 
 ## Decisao: Metricas CAC/ROAS/ROI/LTV
 Essas metricas dependem de dados que AINDA NAO temos:
