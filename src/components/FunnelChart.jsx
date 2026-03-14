@@ -70,7 +70,7 @@ export default function FunnelChart({ stages = [], showConversion = true, varian
               </div>
               {showConversion && dropoff !== null && dropoff > 0 && (
                 <span className="text-[10px] text-text-dim font-bold">
-                  {formatPercent(dropoff)} dropoff
+                  {formatPercent(dropoff)} perda
                 </span>
               )}
             </div>
