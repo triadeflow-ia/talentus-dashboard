@@ -540,49 +540,87 @@ app.get('/api/overview', async (req, res) => {
   }
 });
 
-// Pipelines — stages + opportunity counts
+// Pipelines — stages + opportunity counts (reads from Supabase via cache)
 app.get('/api/pipelines', async (req, res) => {
   try {
     const brand = req.query.brand;
     const seller = req.query.seller;
     const days = req.query.days;
 
-    const pipelines = await getCachedPipelineStages();
+    // Get opps from Supabase cache (same source as /api/overview, /api/sellers)
+    const pipelineResults = await getCachedOpportunities();
+    let allOpps = pipelineResults.flatMap(r => r.opportunities);
+    allOpps = filterByBrand(allOpps, brand);
+    allOpps = filterBySeller(allOpps, seller);
+    allOpps = filterByDays(allOpps, days);
+
+    // Try to get stage definitions from GHL, fallback to Supabase-derived stages
+    let pipelineStages;
+    try {
+      pipelineStages = await getCachedPipelineStages();
+    } catch (e) {
+      pipelineStages = null;
+    }
+
     const pipelineIds = Object.values(PIPELINE_IDS);
     const results = [];
 
-    for (const pipeline of pipelines) {
-      if (!pipelineIds.includes(pipeline.id)) continue;
+    for (const pid of pipelineIds) {
+      const pipelineOpps = allOpps.filter(o => o.pipelineId === pid);
+      if (pipelineOpps.length === 0) continue;
 
-      const opps = filterByDays(filterBySeller(filterByBrand(await fetchAllOpportunities(pipeline.id), brand), seller), days);
+      // Get stage info from GHL cache if available, otherwise derive from Supabase data
+      let stages;
+      const ghlPipeline = pipelineStages?.find(p => p.id === pid);
+      if (ghlPipeline && ghlPipeline.stages?.length > 0) {
+        stages = ghlPipeline.stages
+          .sort((a, b) => a.position - b.position)
+          .map(stage => {
+            const stageOpps = pipelineOpps.filter(o => o.pipelineStageId === stage.id);
+            return {
+              id: stage.id,
+              name: stage.name,
+              position: stage.position,
+              count: stageOpps.filter(o => o.status === 'open').length,
+              totalOpps: stageOpps.length,
+              open: stageOpps.filter(o => o.status === 'open').length,
+              won: stageOpps.filter(o => o.status === 'won').length,
+              lost: stageOpps.filter(o => o.status === 'lost').length,
+              revenue: stageOpps.filter(o => o.status === 'won')
+                .reduce((sum, o) => sum + (parseFloat(o.monetaryValue) || 0), 0),
+            };
+          });
+      } else {
+        // Derive stages from opp data (pipelineStageName field from Supabase)
+        const stageMap = {};
+        for (const opp of pipelineOpps) {
+          const sid = opp.pipelineStageId;
+          if (!stageMap[sid]) stageMap[sid] = { id: sid, name: opp.pipelineStageName || 'Unknown', opps: [] };
+          stageMap[sid].opps.push(opp);
+        }
+        stages = Object.values(stageMap).map((s, i) => ({
+          id: s.id,
+          name: s.name,
+          position: i,
+          count: s.opps.filter(o => o.status === 'open').length,
+          totalOpps: s.opps.length,
+          open: s.opps.filter(o => o.status === 'open').length,
+          won: s.opps.filter(o => o.status === 'won').length,
+          lost: s.opps.filter(o => o.status === 'lost').length,
+          revenue: s.opps.filter(o => o.status === 'won')
+            .reduce((sum, o) => sum + (parseFloat(o.monetaryValue) || 0), 0),
+        }));
+      }
 
-      const stages = (pipeline.stages || [])
-        .sort((a, b) => a.position - b.position)
-        .map(stage => {
-          const stageOpps = opps.filter(o => o.pipelineStageId === stage.id);
-          return {
-            id: stage.id,
-            name: stage.name,
-            position: stage.position,
-            count: stageOpps.filter(o => o.status === 'open').length,
-            totalOpps: stageOpps.length,
-            open: stageOpps.filter(o => o.status === 'open').length,
-            won: stageOpps.filter(o => o.status === 'won').length,
-            lost: stageOpps.filter(o => o.status === 'lost').length,
-            revenue: stageOpps.filter(o => o.status === 'won')
-              .reduce((sum, o) => sum + (parseFloat(o.monetaryValue) || 0), 0),
-          };
-        });
-
-      const open = opps.filter(o => o.status === 'open').length;
-      const won = opps.filter(o => o.status === 'won').length;
-      const lost = opps.filter(o => o.status === 'lost').length;
-      const abandoned = opps.filter(o => o.status === 'abandoned').length;
+      const open = pipelineOpps.filter(o => o.status === 'open').length;
+      const won = pipelineOpps.filter(o => o.status === 'won').length;
+      const lost = pipelineOpps.filter(o => o.status === 'lost').length;
+      const abandoned = pipelineOpps.filter(o => o.status === 'abandoned').length;
 
       results.push({
-        id: pipeline.id,
-        name: pipeline.name,
-        totalOpps: opps.length,
+        id: pid,
+        name: PIPELINE_NAMES[pid] || pid,
+        totalOpps: pipelineOpps.length,
         stages,
         summary: { open, won, lost, abandoned },
       });
