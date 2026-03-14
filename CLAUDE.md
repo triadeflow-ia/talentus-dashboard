@@ -6,14 +6,14 @@ Integra dados de CRM (GHL), vendas e marketing em tempo real.
 Foco: receita, vendas, performance comercial, marketing.
 
 ## Status
-- **Fase atual:** v3.2 — Dados reais completos (Kommo migrado, datas historicas, marca 99.9%, Meta Ads 2 contas)
+- **Fase atual:** v3.3 — Supabase completo (7.131 opps), Dashboard LIVE, GHL comercial populado (648 leads)
 - **Deploy:** LIVE Railway — https://faithful-nature-production.up.railway.app
 - **Portal TDI:** https://faithful-nature-production.up.railway.app/portal (Central de Acompanhamento)
 - **Dominio customizado:** talentus.triadeflow.ai (CNAME pendente no Cloudflare)
 - **Repo:** https://github.com/triadeflow-ia/talentus-dashboard
 - **Railway Project:** https://railway.com/project/13bee088-681c-42f5-ae04-e9e1507fe453
 - **GHL dados:** Base REAL — Kommo migrado (530 leads), datas historicas aplicadas, marca preenchida
-- **Sync status (2026-03-13):** 2,535 opps (99.9% com marca), 5,966 contatos, 636 Meta Ads daily, R$409K receita
+- **Sync status (2026-03-14):** 7,131 opps, 6,006 contatos, 639 Meta Ads daily, R$1,079K receita, GHL 648 leads comerciais
 
 ## Stack
 - **Frontend:** React 19 + Vite 6 + Tailwind v4 + Recharts + React Query + Lucide React
@@ -134,10 +134,20 @@ GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 17. [x] **server.js + sync.js atualizados** — env vars PIPELINE_COMERCIAL_MATEUS + PIPELINE_COMERCIAL_CYB
 18. [x] **Workflow "Won → Onboarding"** criado no GHL
 19. [x] **Scripts de migracao v2** — exec-batch.js, JSONs por batch prontos
-20. [ ] **REIMPORTACAO LIMPA** — GHL + Supabase zerados, rodar batches 1-5 ← PROXIMO
-21. [ ] Aplicar datas historicas (fix-kommo-dates.js) apos migracao
-22. [ ] Sync Supabase apos migracao
-23. [ ] Atualizar env vars no Railway (PIPELINE_COMERCIAL_MATEUS, PIPELINE_COMERCIAL_CYB)
+20. [x] **SUPABASE POPULADO DIRETO** — import-from-xlsx.js: 7.131 opps, 507 won, R$1.079.556
+21. [x] **GHL BATCHES COMERCIAIS** — batch1-won (467ok), batch2-mateus (152ok), batch3-cyb (29ok) = 648 leads comerciais
+22. [x] **Pipeline IDs hardcoded** — fallback no server.js (nao depende de env vars Railway)
+23. [x] **GHL sync desabilitado** — DISABLE_GHL_SYNC=true ate GHL completo
+24. [x] **Fix paginacao Supabase** — busca todas as 7.131 opps (antes: max 1000)
+25. [x] **Fix /api/pipelines** — le do Supabase (antes: GHL vazio = zeros)
+26. [x] **Fix totalLeads** — conta contacts do Supabase (antes: GHL = 0)
+27. [x] **Fix produtos cross-brand** — filtra por marca da opp
+28. [x] **Auditoria completa 2026-03-14** — AUDITORIA-COMPLETA-2026-03-14.md
+29. [ ] Rodar batch4-nutricao-reativacao (366 leads) — pode rodar durante a semana
+30. [ ] Rodar batch5-nutricao-entrada (6.072 leads) — pode rodar durante a semana
+31. [ ] Apos GHL completo: limpar Supabase → syncGHL() 1x → IDs consistentes
+32. [ ] Setar DISABLE_GHL_SYNC=false no Railway (segunda-feira)
+33. [ ] Criar 13 workflows no GHL (W01-W13)
 24. [ ] Criar 13 workflows no GHL (W01-W13)
 25. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
 26. [ ] Integrar Google Ads API (CPC, conversoes)
