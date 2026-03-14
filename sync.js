@@ -650,22 +650,29 @@ export async function startSync() {
     return;
   }
 
-  console.log('[sync] Initial sync starting...');
+  // GHL sync disabled — CRM vazio, dados historicos ja no Supabase via xlsx import
+  // Reativar quando GHL tiver leads reais (segunda-feira)
+  // Para reativar: remover env var DISABLE_GHL_SYNC ou setar para 'false'
+  const ghlSyncDisabled = (process.env.DISABLE_GHL_SYNC || 'true') === 'true';
 
-  // Run initial sync
-  await syncGHL();
-  await syncMeta(90); // backfill 90 days
+  if (ghlSyncDisabled) {
+    console.log('[sync] GHL sync DISABLED (DISABLE_GHL_SYNC=true) — dados historicos ja no Supabase');
+  } else {
+    console.log('[sync] GHL initial sync starting...');
+    await syncGHL();
+    setInterval(() => {
+      console.log('[sync] Periodic GHL sync...');
+      syncGHL().catch(e => console.error('[sync] GHL periodic error:', e.message));
+    }, 15 * 60 * 1000);
+  }
 
-  // Schedule periodic syncs
-  setInterval(() => {
-    console.log('[sync] Periodic GHL sync...');
-    syncGHL().catch(e => console.error('[sync] GHL periodic error:', e.message));
-  }, 15 * 60 * 1000); // every 15 min
-
+  // Meta Ads sync ativo (independente do GHL)
+  console.log('[sync] Meta Ads initial sync...');
+  await syncMeta(90);
   setInterval(() => {
     console.log('[sync] Periodic Meta sync...');
     syncMeta(7).catch(e => console.error('[sync] Meta periodic error:', e.message));
-  }, 30 * 60 * 1000); // every 30 min
+  }, 30 * 60 * 1000);
 
-  console.log('[sync] Sync scheduled: GHL every 15min, Meta every 30min');
+  console.log(`[sync] Sync scheduled: GHL ${ghlSyncDisabled ? 'DISABLED' : 'every 15min'}, Meta every 30min`);
 }
