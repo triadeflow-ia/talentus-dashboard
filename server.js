@@ -307,6 +307,8 @@ const TAG_PRODUTO_MAP = {
   'produto_formacao_nutri': 'Formacao Nutri Expert',
   'produto_low_ticket_cyb': 'Low Ticket CYB',
   'produto_profissional_mentory': 'Profissional Mentory',
+  'mentoria_individual': 'Sala Secreta',
+  'mentoria_gps': 'Sala Secreta',
 };
 
 function getMarcaFromTags(tags) {
@@ -335,7 +337,23 @@ const CUSTOM_FIELD_MAP = {
 
 // --- Helper: Get custom field value from opp ---
 function getCustomField(opp, ...keys) {
-  // First try tags (GHL stores marca/produto as contact tags)
+  // 1. Try customFields first (direct field from Supabase: key='marca', key='produto', etc.)
+  const fields = opp.customFields || [];
+  for (const f of fields) {
+    const k = (f.key || f.fieldKey || '').toLowerCase();
+    if (keys.some(key => k.includes(key))) {
+      const val = f.value || f.fieldValue || f.field_value || null;
+      if (val) return val;
+    }
+    // Also check by GHL field ID
+    const fieldId = f.id || f.key || '';
+    const mappedName = CUSTOM_FIELD_MAP[fieldId];
+    if (mappedName && keys.some(key => mappedName.includes(key))) {
+      const val = f.value || f.fieldValue || f.field_value || null;
+      if (val) return val;
+    }
+  }
+  // 2. Fallback: try tags (GHL stores marca/produto as contact tags)
   const tags = opp.contact?.tags || opp.tags || [];
   if (keys.includes('marca')) {
     const marca = getMarcaFromTags(tags);
@@ -344,19 +362,6 @@ function getCustomField(opp, ...keys) {
   if (keys.includes('produto')) {
     const produto = getProdutoFromTags(tags);
     if (produto) return produto;
-  }
-  // Fallback: customFields
-  const fields = opp.customFields || [];
-  for (const f of fields) {
-    const fieldId = f.id || f.key || '';
-    const mappedName = CUSTOM_FIELD_MAP[fieldId];
-    if (mappedName && keys.some(key => mappedName.includes(key))) {
-      return f.value || f.fieldValue || f.field_value || null;
-    }
-    const k = (f.key || f.fieldKey || '').toLowerCase();
-    if (keys.some(key => k.includes(key))) {
-      return f.value || f.fieldValue || f.field_value || null;
-    }
   }
   return null;
 }
@@ -413,7 +418,7 @@ async function getCachedPipelineStages() {
   }
 }
 
-// --- Cached contacts count (avoid GHL API calls) ---
+// --- Cached contacts count (Supabase first, GHL fallback) ---
 const contactsCountCache = { count: 0, timestamp: 0, ttl: 15 * 60 * 1000 }; // 15 min
 
 async function getCachedContactsCount() {
@@ -422,13 +427,25 @@ async function getCachedContactsCount() {
     return contactsCountCache.count;
   }
   try {
+    // Try Supabase first (no rate limit)
+    const { getSupabase } = await import('./sync.js');
+    const sb = getSupabase();
+    if (sb) {
+      const { count } = await sb.from('contacts').select('id', { count: 'exact', head: true });
+      if (count > 0) {
+        contactsCountCache.count = count;
+        contactsCountCache.timestamp = Date.now();
+        return count;
+      }
+    }
+    // Fallback to GHL
     const data = await ghlFetch(`/contacts/?locationId=${GHL_LOCATION_ID}&limit=1`);
     contactsCountCache.count = data.meta?.total || data.contacts?.length || 0;
     contactsCountCache.timestamp = Date.now();
     return contactsCountCache.count;
   } catch (e) {
     console.error('[cache] Contacts count error:', e.message);
-    return contactsCountCache.count; // return stale
+    return contactsCountCache.count;
   }
 }
 
