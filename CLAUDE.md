@@ -128,17 +128,21 @@ GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 11. [x] Datas historicas Kommo — fix-kommo-dates.js aplicou "Data Criada" em 2,535 opps + 5,966 contatos
 12. [x] Meta Ads sincronizado — 636 daily records + 1,234 entities (90 dias, 2 contas, R$32K spend)
 13. [x] Auditoria completa Kommo vs Supabase — AUDITORIA-KOMMO-SUPABASE.md
-14. [ ] **DECISAO MATEUS: Separar funis por marca** — Mateus e CybNutri terao pipelines proprios ← PROXIMO
-15. [ ] **Reconciliar marca CybNutri** — 282 contatos com tag errada, 52 opps (esperado ~1000+)
-16. [ ] **Fix sync.js** — rate limit (2s→5s), nao sobrescrever created_at antigo
-17. [ ] Criar novos pipelines GHL (Comercial Mateus + Comercial CybNutri)
-18. [ ] Mover opps para pipelines corretos baseado na marca
-19. [ ] Atualizar sync.js + dashboard para novos pipelines
-20. [ ] Criar 13 workflows no GHL (W01-W13)
-21. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
-22. [ ] Integrar Google Ads API (CPC, conversoes)
-23. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
-24. [ ] Upload fotos dos vendedores
+14. [x] **DECISAO MATEUS: Separar funis por marca** — Pipelines criados no GHL
+15. [x] **Fix sync.js** — rate limit (15s backoff), nao sobrescrever created_at
+16. [x] **Pipelines novos criados** — Comercial Mateus (`kR7dX3quCskPn8y1hUR5`) + Comercial CybNutri (`l0xKJIaG2JOWnpriXGlS`)
+17. [x] **server.js + sync.js atualizados** — env vars PIPELINE_COMERCIAL_MATEUS + PIPELINE_COMERCIAL_CYB
+18. [x] **Workflow "Won → Onboarding"** criado no GHL
+19. [x] **Scripts de migracao v2** — exec-batch.js, JSONs por batch prontos
+20. [ ] **REIMPORTACAO LIMPA** — GHL + Supabase zerados, rodar batches 1-5 ← PROXIMO
+21. [ ] Aplicar datas historicas (fix-kommo-dates.js) apos migracao
+22. [ ] Sync Supabase apos migracao
+23. [ ] Atualizar env vars no Railway (PIPELINE_COMERCIAL_MATEUS, PIPELINE_COMERCIAL_CYB)
+24. [ ] Criar 13 workflows no GHL (W01-W13)
+25. [ ] Integrar GURU checkout (webhook → dados de pagamento real)
+26. [ ] Integrar Google Ads API (CPC, conversoes)
+27. [ ] Metricas CAC, ROAS, ROI, LTV (requer dados de marketing + pagamentos)
+28. [ ] Upload fotos dos vendedores
 
 ## Auditoria Completa (2026-03-13)
 - **Relatorio:** `AUDITORIA-KOMMO-SUPABASE.md` — cruzamento dos 6 xlsx Kommo vs Supabase
@@ -147,14 +151,29 @@ GET /api/meta/timeline?days=&account_id=       — Timeline diaria Meta
 - **Deduplicacao:** 6.475 duplicados tratados corretamente
 - **Script auditoria:** `audit-kommo-vs-supabase.js` (reexecutavel)
 
-## Problemas Conhecidos (2026-03-13)
-- **[CRITICO] CybNutri subcontagem:** Apenas 52 opps (esperado ~1000+). 256 contatos cross-source com marca conflitante. Script reconciliacao NECESSARIO.
-- **[CRITICO] GHL sync Railway FALHANDO:** 10 ultimos syncs GHL todos erraram (429 rate limit). Sync periodico NAO funciona.
-- **[CRITICO] 282 contatos com tag marca ERRADA** no GHL (sobrescrita pela migracao sequencial)
-- **[MEDIO] sync.js sobrescreve contact.created_at** — todos 5.966 contatos com data de hoje
-- **[MEDIO] 100 opps com data de hoje** — 5 sao membros equipe, 95 sem match Kommo
-- **DNS talentus.triadeflow.ai:** CNAME nao configurado (token Cloudflare expirado)
-- **2 opps sem marca:** 2/2,535 (0.1%)
+## Problemas Conhecidos (2026-03-14)
+- **[RESOLVIDO] CybNutri subcontagem:** Corrigido — routing por source (arquivo=marca)
+- **[RESOLVIDO] Tags sobrescritas:** Reset total + reimportacao limpa em andamento
+- **[RESOLVIDO] sync.js rate limit + created_at:** Fix aplicado (15s backoff, preserva created_at)
+- **[PENDENTE] Reimportacao:** GHL zerado, 5 batches JSON prontos, rodar na proxima sessao
+- **[PENDENTE] DNS talentus.triadeflow.ai:** CNAME nao configurado (token Cloudflare expirado)
+
+## Migracao v2 — Estado (2026-03-14)
+- **GHL:** ZERADO (0 contatos, 0 opps)
+- **Supabase:** ZERADO (0 opportunities, 0 contacts)
+- **Pipelines prontos:** Comercial Mateus + Comercial CybNutri + Nutricao (inalterado)
+- **Workflow:** Won → Onboarding criado no GHL
+- **Regra won:** TODA venda ganha → Comercial da marca / Negociacao / won (depois mover pra Onboarding Concluido)
+- **Batches JSON prontos:**
+  - batch1-won.json: 470 leads (R$1.079K)
+  - batch2-comercial-mateus.json: 157 leads
+  - batch3-comercial-cyb.json: 29 leads
+  - batch4-nutricao-reativacao.json: 366 leads
+  - batch5-nutricao-entrada.json: 6,072 leads
+- **Script:** `node exec-batch.js <arquivo.json> [start] [max]`
+- **IMPORTANTE:** Rodar foreground, NAO background (Node no Windows trava fetch em background)
+- **IMPORTANTE:** Verificar `tasklist //FI "IMAGENAME eq node.exe"` antes de rodar pra garantir zero processos
+- **Datas:** GHL API nao aceita dateAdded — aplicar depois via fix-kommo-dates.js no Supabase
 
 ## Decisao: Metricas CAC/ROAS/ROI/LTV
 Essas metricas dependem de dados que AINDA NAO temos:
