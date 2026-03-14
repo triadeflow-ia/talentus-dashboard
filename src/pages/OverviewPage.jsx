@@ -153,7 +153,7 @@ export default function OverviewPage() {
         {/* Funnel — 1 col */}
         <ChartCard
           title="Funil Comercial"
-          subtitle="Pipeline comercial por etapa"
+          subtitle="Pipelines comerciais (Mateus + CybNutri)"
           className="animate-fade-in-delay-2"
         >
           {commercialStages.length > 0 ? (
@@ -206,7 +206,7 @@ export default function OverviewPage() {
       {commercialStages.length > 1 && (
         <ChartCard
           title="Taxa de Conversao por Etapa"
-          subtitle="Funil comercial — conversao entre etapas"
+          subtitle="Funil comercial combinado — conversao entre etapas"
           className="animate-fade-in-delay-2"
         >
           <div className="overflow-x-auto">

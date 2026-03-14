@@ -23,8 +23,12 @@ const META_API_VERSION = 'v21.0';
 const META_BASE_URL = `https://graph.facebook.com/${META_API_VERSION}`;
 
 // --- Pipeline IDs ---
+const PIPELINE_COMERCIAL_MATEUS = process.env.PIPELINE_COMERCIAL_MATEUS || 'COMERCIAL_MATEUS_ID';
+const PIPELINE_COMERCIAL_CYB = process.env.PIPELINE_COMERCIAL_CYB || 'COMERCIAL_CYB_ID';
+
 const PIPELINE_IDS = {
-  comercial: 'kR7dX3quCskPn8y1hUR5',
+  comercialMateus: PIPELINE_COMERCIAL_MATEUS,
+  comercialCyb: PIPELINE_COMERCIAL_CYB,
   nutricao: 'YGbvdHFPw2OMVgEyshGJ',
   onboarding: 'dEwvGqgx6Z89e0sRzyW6',
   recuperacao: '1MYy0chmMviDTSxC1JH2',
@@ -32,8 +36,12 @@ const PIPELINE_IDS = {
   suporte: 'AOaBfkNUCZlYskkU3aMh',
 };
 
+// IDs of commercial pipelines (used for funnel aggregation)
+const COMMERCIAL_PIPELINE_IDS = [PIPELINE_IDS.comercialMateus, PIPELINE_IDS.comercialCyb];
+
 const PIPELINE_NAMES = {
-  [PIPELINE_IDS.comercial]: 'Comercial',
+  [PIPELINE_IDS.comercialMateus]: 'Comercial Mateus Cortez',
+  [PIPELINE_IDS.comercialCyb]: 'Comercial CybNutri',
   [PIPELINE_IDS.nutricao]: 'Nutricao',
   [PIPELINE_IDS.onboarding]: 'Onboarding de Produto',
   [PIPELINE_IDS.recuperacao]: 'Recuperacao',
@@ -481,21 +489,25 @@ app.get('/api/overview', async (req, res) => {
     const conversionRate = allOpps.length > 0 ? (wonCount / allOpps.length) * 100 : 0;
     const avgTicket = wonCount > 0 ? totalRevenue / wonCount : 0;
 
-    // Build commercial funnel from Comercial pipeline stages
-    const comercialResult = pipelineResults.find(r => r.pipelineId === PIPELINE_IDS.comercial);
+    // Build commercial funnel from both Comercial pipelines (Mateus + CybNutri)
+    const comercialResults = pipelineResults.filter(r => COMMERCIAL_PIPELINE_IDS.includes(r.pipelineId));
     let commercialFunnel = [];
-    if (comercialResult) {
-      const opps = filterBySeller(filterByBrand(comercialResult.opportunities, brand), seller);
+    if (comercialResults.length > 0) {
+      const allComercialOpps = comercialResults.flatMap(r => r.opportunities);
+      const opps = filterByDays(filterBySeller(filterByBrand(allComercialOpps, brand), seller), days);
       const pipelines = await getCachedPipelineStages();
-      const comercialPipeline = pipelines.find(p => p.id === PIPELINE_IDS.comercial);
-      if (comercialPipeline) {
-        commercialFunnel = (comercialPipeline.stages || [])
-          .sort((a, b) => a.position - b.position)
-          .map(stage => ({
-            name: stage.name,
-            count: opps.filter(o => o.pipelineStageId === stage.id && o.status === 'open').length,
-          }));
+      // Merge stages from all commercial pipelines by stage name
+      const stageCountMap = {};
+      for (const comercialPipeline of pipelines.filter(p => COMMERCIAL_PIPELINE_IDS.includes(p.id))) {
+        for (const stage of (comercialPipeline.stages || []).sort((a, b) => a.position - b.position)) {
+          const stageOpps = opps.filter(o => o.pipelineStageId === stage.id && o.status === 'open').length;
+          if (!stageCountMap[stage.name]) {
+            stageCountMap[stage.name] = { name: stage.name, count: 0, position: stage.position };
+          }
+          stageCountMap[stage.name].count += stageOpps;
+        }
       }
+      commercialFunnel = Object.values(stageCountMap).sort((a, b) => a.position - b.position);
     }
 
     res.json({

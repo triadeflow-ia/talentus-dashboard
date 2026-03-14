@@ -36,7 +36,7 @@ async function ghlFetch(pathStr, retries = 3) {
       },
     });
     if (res.status === 429) {
-      const wait = Math.min(2000 * Math.pow(2, attempt), 30000);
+      const wait = 15000 * (attempt + 1); // 15s, 30s, 45s
       console.warn(`[sync] 429 rate limit, waiting ${wait}ms (attempt ${attempt + 1}/${retries + 1})`);
       await new Promise(r => setTimeout(r, wait));
       continue;
@@ -137,8 +137,12 @@ function getCustomField(opp, ...keys) {
 }
 
 // --- Pipeline info ---
+const PIPELINE_COMERCIAL_MATEUS = process.env.PIPELINE_COMERCIAL_MATEUS || 'COMERCIAL_MATEUS_ID';
+const PIPELINE_COMERCIAL_CYB = process.env.PIPELINE_COMERCIAL_CYB || 'COMERCIAL_CYB_ID';
+
 const PIPELINE_IDS = {
-  comercial: 'kR7dX3quCskPn8y1hUR5',
+  comercialMateus: PIPELINE_COMERCIAL_MATEUS,
+  comercialCyb: PIPELINE_COMERCIAL_CYB,
   nutricao: 'YGbvdHFPw2OMVgEyshGJ',
   onboarding: 'dEwvGqgx6Z89e0sRzyW6',
   recuperacao: '1MYy0chmMviDTSxC1JH2',
@@ -147,7 +151,8 @@ const PIPELINE_IDS = {
 };
 
 const PIPELINE_NAMES = {
-  [PIPELINE_IDS.comercial]: 'Comercial',
+  [PIPELINE_IDS.comercialMateus]: 'Comercial Mateus Cortez',
+  [PIPELINE_IDS.comercialCyb]: 'Comercial CybNutri',
   [PIPELINE_IDS.nutricao]: 'Nutricao',
   [PIPELINE_IDS.onboarding]: 'Onboarding de Produto',
   [PIPELINE_IDS.recuperacao]: 'Recuperacao',
@@ -224,7 +229,6 @@ export async function syncGHL() {
             assigned_to: c.assignedTo || null,
             vendedor: resolveSellerName(c.assignedTo) || null,
             source: c.source || null,
-            created_at: c.dateAdded || new Date().toISOString(),
             synced_at: new Date().toISOString(),
           };
         });
@@ -232,6 +236,19 @@ export async function syncGHL() {
         const { error } = await sb.from('contacts').upsert(rows, { onConflict: 'id' });
         if (error) console.error(`[sync]   Contacts upsert error: ${error.message}`);
         else contactsSynced += rows.length;
+
+        // Set created_at ONLY for new records (where created_at is NULL)
+        const newContactRows = contacts
+          .filter(c => c.dateAdded)
+          .map(c => ({ id: c.id, created_at: c.dateAdded }));
+        if (newContactRows.length > 0) {
+          for (const nc of newContactRows) {
+            await sb.from('contacts')
+              .update({ created_at: nc.created_at })
+              .eq('id', nc.id)
+              .is('created_at', null);
+          }
+        }
       }
 
       if (contacts.length < 100) {
@@ -264,7 +281,7 @@ export async function syncGHL() {
         allStageMaps[pipeline.id] = stageMap;
       }
       console.log(`[sync]   Loaded stages for ${Object.keys(allStageMaps).length} pipelines`);
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 2000));
     } catch (e) {
       console.warn(`[sync]   Could not fetch stages: ${e.message}`);
     }
@@ -318,15 +335,29 @@ export async function syncGHL() {
               loss_reason: getCustomField(opp, 'motivo') || null,
               source: getCustomField(opp, 'origem') || null,
               tags: contactTags,
-              created_at: opp.createdAt || opp.dateAdded || new Date().toISOString(),
               updated_at: opp.updatedAt || opp.lastStatusChangeAt || null,
               synced_at: new Date().toISOString(),
+              _ghl_created_at: opp.createdAt || opp.dateAdded || null, // temp field for new record check
             };
           });
+
+          // Extract created_at info before upsert (remove temp field from rows)
+          const oppCreatedDates = rows.map(r => ({ id: r.id, created_at: r._ghl_created_at }));
+          rows.forEach(r => delete r._ghl_created_at);
 
           const { error } = await sb.from('opportunities').upsert(rows, { onConflict: 'id' });
           if (error) console.error(`[sync]   Upsert error: ${error.message}`);
           else totalSynced += rows.length;
+
+          // Set created_at ONLY for new records (where created_at is NULL)
+          for (const oc of oppCreatedDates) {
+            if (oc.created_at) {
+              await sb.from('opportunities')
+                .update({ created_at: oc.created_at })
+                .eq('id', oc.id)
+                .is('created_at', null);
+            }
+          }
           pipelineOpps += rows.length;
           pipelineMarca += rows.filter(r => r.marca).length;
         }
